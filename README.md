@@ -41,5 +41,24 @@ Des comptes de démonstration sont automatiquement créés (login/mot de passe) 
 - `app/services.py` : logique métier (catalogue, prêts, pénalités, statistiques)
 - `app/main.py` : interface Tkinter avec tableau de bord selon le rôle
 
+## Comment tester rapidement ?
+1. **Vérifier la syntaxe** :
+   ```bash
+   python -m compileall app
+   ```
+2. **Lancer l'application en local** (SQLite par défaut) :
+   ```bash
+   python -m app.main
+   ```
+   Connectez-vous avec l'un des comptes de démonstration, créez un emprunt (onglet "Prêts/Retours" avec l'ID adhérent = 1 et l'ID exemplaire = 1 ou 2), puis testez un retour pour voir le calcul de pénalité affiché.
+3. **Tester avec SQL Server** :
+   - Installez le driver ODBC 17 pour SQL Server sur votre machine.
+   - Exportez l'URL de connexion avant de lancer l'app :
+     ```bash
+     export DATABASE_URL="mssql+pyodbc://user:password@host:1433/dbname?driver=ODBC+Driver+17+for+SQL+Server"
+     python -m app.main
+     ```
+   - Au démarrage, le schéma est créé automatiquement et les données de démonstration sont injectées si la base est vide.
+
 ## Remarques
 Ce prototype vise à illustrer les concepts du cahier de charges. Pour une mise en production, prévoir la gestion fine des états des exemplaires, des transactions SQL Server et des tests automatisés.
