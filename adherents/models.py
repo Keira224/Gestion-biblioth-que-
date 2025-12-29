@@ -1,8 +1,10 @@
+# Role de ce fichier: modele Adherent (lecteur).
 from django.conf import settings
 from django.db import models
 
 
 class Adherent(models.Model):
+    # Profil lecteur associe a un user.
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

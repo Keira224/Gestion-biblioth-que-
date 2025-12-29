@@ -1,8 +1,8 @@
+# Role de ce fichier: routes auth et gestion des utilisateurs (ADMIN).
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .api_views import me
-from .admin_views import admin_user_detail, admin_user_password, admin_users
+from .views import admin_user_detail, admin_user_password, admin_users, me
 
 urlpatterns = [
     path("api/auth/me/", me),

@@ -1,6 +1,7 @@
+# Role de ce fichier: routes exemplaires.
 from django.urls import path
 
-from .api_views import exemplaire_detail, exemplaires_disponibles, exemplaires_par_ouvrage
+from .views import exemplaire_detail, exemplaires_disponibles, exemplaires_par_ouvrage
 
 urlpatterns = [
     path("api/catalogue/exemplaires-disponibles/", exemplaires_disponibles),

@@ -1,9 +1,11 @@
+# Role de ce fichier: serializers DRF pour ouvrages.
 from rest_framework import serializers
 
 from .models import Ouvrage
 
 
 class OuvrageSerializer(serializers.ModelSerializer):
+    # Sortie ouvrage + compteurs.
     exemplaires_total = serializers.IntegerField(read_only=True)
     exemplaires_disponibles = serializers.IntegerField(read_only=True)
 
@@ -25,6 +27,7 @@ class OuvrageSerializer(serializers.ModelSerializer):
 
 
 class OuvrageCreateSerializer(serializers.ModelSerializer):
+    # Input creation ouvrage (+ nombre_exemplaires).
     nombre_exemplaires = serializers.IntegerField(required=False, min_value=0)
 
     class Meta:
@@ -43,6 +46,7 @@ class OuvrageCreateSerializer(serializers.ModelSerializer):
 
 
 class OuvrageUpdateSerializer(serializers.ModelSerializer):
+    # Input update ouvrage.
     class Meta:
         model = Ouvrage
         fields = ["isbn", "titre", "auteur", "editeur", "annee", "categorie", "type_ressource", "disponible"]

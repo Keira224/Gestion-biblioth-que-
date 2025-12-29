@@ -1,7 +1,12 @@
+# Role de ce fichier: modele et helpers de base (parametres systeme, activites).
+from typing import Optional
+
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import models
 
 class Parametre(models.Model):
+    # Parametres systeme: penalites, duree, quota emprunts.
     tarif_penalite_par_jour = models.DecimalField(max_digits=10, decimal_places=2, default=1000.00)
     duree_emprunt_jours = models.PositiveIntegerField(default=14)
     quota_emprunts_actifs = models.PositiveIntegerField(default=3)
@@ -13,6 +18,7 @@ class Parametre(models.Model):
 
 
 class ActivityType(models.TextChoices):
+    # Types d'activites pour le journal systeme.
     EMPRUNT_CREE = "EMPRUNT_CREE", "Emprunt cree"
     RETOUR_ENREGISTRE = "RETOUR_ENREGISTRE", "Retour enregistre"
     PENALITE_CREE = "PENALITE_CREE", "Penalite creee"
@@ -26,6 +32,7 @@ class ActivityType(models.TextChoices):
 
 
 class Activity(models.Model):
+    # Journal d'activites: evenement + message + user associe.
     type = models.CharField(max_length=40, choices=ActivityType.choices)
     message = models.CharField(max_length=255)
     user = models.ForeignKey(
@@ -39,3 +46,12 @@ class Activity(models.Model):
 
     def __str__(self):
         return f"{self.type} - {self.message}"
+
+
+User = get_user_model()
+
+
+# Helper: enregistre une activite systeme.
+def log_activity(*, type: str, message: str, user: Optional[User] = None) -> Activity:
+    # Permissions: gerees par les vues qui appellent cette fonction.
+    return Activity.objects.create(type=type, message=message, user=user)

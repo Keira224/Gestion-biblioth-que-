@@ -1,6 +1,7 @@
+# Role de ce fichier: routes emprunts, penalites, stats, activities.
 from django.urls import path
 
-from .api_views import (
+from .views import (
     creer_emprunt_api,
     creer_emprunt_lecteur,
     retour_emprunt_api,

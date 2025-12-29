@@ -1,3 +1,4 @@
+# Role de ce fichier: modeles emprunts, penalites, reservations.
 from django.db import models
 from django.utils import timezone
 
@@ -7,12 +8,14 @@ from ouvrages.models import Ouvrage
 
 
 class StatutEmprunt(models.TextChoices):
+    # Statuts possibles d'un emprunt.
     EN_COURS = "EN_COURS", "En cours"
     RETOURNE = "RETOURNE", "Retourné"
     EN_RETARD = "EN_RETARD", "En retard"
 
 
 class Emprunt(models.Model):
+    # Enregistrement d'un emprunt.
     exemplaire = models.ForeignKey(
         Exemplaire,
         on_delete=models.PROTECT,
@@ -58,6 +61,7 @@ class Emprunt(models.Model):
 
 
 class Penalite(models.Model):
+    # Penalite liee a un emprunt en retard.
     emprunt = models.OneToOneField(
         Emprunt,
         on_delete=models.CASCADE,
@@ -74,12 +78,14 @@ class Penalite(models.Model):
 
 
 class StatutReservation(models.TextChoices):
+    # Statuts possibles d'une reservation.
     EN_ATTENTE = "EN_ATTENTE", "En attente"
     ANNULEE = "ANNULEE", "Annulee"
     HONOREE = "HONOREE", "Honoree"
 
 
 class Reservation(models.Model):
+    # Reservation d'un ouvrage par un lecteur.
     adherent = models.ForeignKey(
         Adherent,
         on_delete=models.CASCADE,

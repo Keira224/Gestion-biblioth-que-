@@ -1,9 +1,11 @@
+# Role de ce fichier: serializers DRF pour adherents.
 from rest_framework import serializers
 
 from .models import Adherent
 
 
 class AdherentListSerializer(serializers.ModelSerializer):
+    # Sortie liste adherents pour selection.
     username = serializers.CharField(source="user.username", read_only=True)
     nom = serializers.CharField(source="user.last_name", read_only=True)
     prenom = serializers.CharField(source="user.first_name", read_only=True)

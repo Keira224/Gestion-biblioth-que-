@@ -1,3 +1,4 @@
+# Role de ce fichier: serializers DRF pour gestion admin des users.
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
@@ -9,6 +10,7 @@ User = get_user_model()
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
+    # Sortie liste/detail admin: user + role + adherent.
     role = serializers.SerializerMethodField()
     adherent = serializers.SerializerMethodField()
 
@@ -39,6 +41,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 
 class AdminUserCreateSerializer(serializers.Serializer):
+    # Input creation admin: username/email/password/role + infos adherent si lecteur.
     username = serializers.CharField(max_length=150)
     email = serializers.EmailField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, min_length=6)
@@ -60,6 +63,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
 
 
 class AdminUserUpdateSerializer(serializers.Serializer):
+    # Input update admin: champs user + role + adherent.
     username = serializers.CharField(max_length=150, required=False)
     email = serializers.EmailField(required=False, allow_blank=True)
     role = serializers.ChoiceField(choices=UserRole.choices, required=False)
@@ -70,4 +74,5 @@ class AdminUserUpdateSerializer(serializers.Serializer):
 
 
 class AdminPasswordResetSerializer(serializers.Serializer):
+    # Input reset password admin.
     password = serializers.CharField(write_only=True, min_length=6)

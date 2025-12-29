@@ -1,6 +1,7 @@
+# Role de ce fichier: routes ouvrages.
 from django.urls import path
 
-from .api_views import ouvrage_detail, ouvrages_list
+from .views import ouvrage_detail, ouvrages_list
 
 urlpatterns = [
     path("api/catalogue/ouvrages/", ouvrages_list),

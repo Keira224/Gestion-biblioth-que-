@@ -1,9 +1,11 @@
+# Role de ce fichier: serializers DRF pour emprunts, penalites, reservations.
 from rest_framework import serializers
 
 from .models import Emprunt, Penalite, Reservation
 
 
 class EmpruntSerializer(serializers.ModelSerializer):
+    # Sortie emprunt avec infos lecteur/ouvrage.
     jours_retard = serializers.SerializerMethodField()
     exemplaire_code = serializers.CharField(source="exemplaire.code_barre", read_only=True)
     ouvrage_titre = serializers.CharField(source="exemplaire.ouvrage.titre", read_only=True)
@@ -34,6 +36,7 @@ class EmpruntSerializer(serializers.ModelSerializer):
 
 
 class PenaliteSerializer(serializers.ModelSerializer):
+    # Sortie penalite avec details emprunt/ouvrage.
     emprunt_id = serializers.IntegerField(source="emprunt.id", read_only=True)
     adherent_username = serializers.CharField(source="emprunt.adherent.user.username", read_only=True)
     ouvrage_titre = serializers.CharField(source="emprunt.exemplaire.ouvrage.titre", read_only=True)
@@ -60,15 +63,18 @@ class PenaliteSerializer(serializers.ModelSerializer):
 
 
 class CreerEmpruntInputSerializer(serializers.Serializer):
+    # Input creation emprunt admin/biblio.
     exemplaire_id = serializers.IntegerField()
     adherent_id = serializers.IntegerField()
 
 
 class CreerEmpruntLecteurSerializer(serializers.Serializer):
+    # Input creation emprunt lecteur.
     exemplaire_id = serializers.IntegerField()
 
 
 class ReservationSerializer(serializers.ModelSerializer):
+    # Sortie reservation.
     ouvrage_titre = serializers.CharField(source="ouvrage.titre", read_only=True)
     ouvrage_auteur = serializers.CharField(source="ouvrage.auteur", read_only=True)
     adherent_username = serializers.CharField(source="adherent.user.username", read_only=True)
@@ -89,4 +95,5 @@ class ReservationSerializer(serializers.ModelSerializer):
 
 
 class ReservationCreateSerializer(serializers.Serializer):
+    # Input creation reservation lecteur.
     ouvrage_id = serializers.IntegerField()

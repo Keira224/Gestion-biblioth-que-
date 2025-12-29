@@ -1,13 +1,16 @@
+# Role de ce fichier: modele Ouvrage et type de ressource.
 from django.db import models
 
 
 class TypeRessource(models.TextChoices):
+    # Type de support dans le catalogue.
     LIVRE = "LIVRE", "Livre"
     DVD = "DVD", "DVD"
     RESSOURCE_NUMERIQUE = "RESSOURCE_NUMERIQUE", "Ressource numerique"
 
 
 class Ouvrage(models.Model):
+    # Ouvrage du catalogue (livre, dvd, ressource numerique).
     isbn = models.CharField(
         max_length=20,
         unique=True,
