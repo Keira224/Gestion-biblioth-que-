@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-100 text-slate-900;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.bg-sidebar-gradient {
+  background: linear-gradient(180deg, #2140ff 0%, #1d3aa8 45%, #0e1b4d 100%);
+}
