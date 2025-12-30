@@ -7,7 +7,7 @@ import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
 import { Modal } from "../../../../components/Modal";
 
-export default function AdminExemplairesPage() {
+export default function BibliothecaireExemplairesPage() {
   const [ouvrages, setOuvrages] = useState<any[]>([]);
   const [selectedOuvrage, setSelectedOuvrage] = useState<string>("");
   const [exemplaires, setExemplaires] = useState<any[]>([]);
@@ -66,7 +66,7 @@ export default function AdminExemplairesPage() {
   };
 
   return (
-    <RoleGuard allowed={["ADMIN"]}>
+    <RoleGuard allowed={["BIBLIOTHECAIRE"]}>
       <div className="space-y-6">
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">

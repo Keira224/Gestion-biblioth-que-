@@ -127,6 +127,17 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleDelete = async (userId: number) => {
+    if (!confirm("Supprimer définitivement cet utilisateur ?")) return;
+    setError(null);
+    try {
+      await api.delete(`/api/admin/users/${userId}/delete/`);
+      await fetchUsers();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Suppression impossible.");
+    }
+  };
+
   return (
     <RoleGuard allowed={["ADMIN"]}>
       <div className="space-y-6">
@@ -180,6 +191,13 @@ export default function AdminUsersPage() {
                       className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white"
                     >
                       Désactiver
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(user.id)}
+                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600"
+                    >
+                      Supprimer
                     </button>
                   </td>
                 </tr>

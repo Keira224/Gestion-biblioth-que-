@@ -81,6 +81,26 @@ class Paiement(models.Model):
         return f"Paiement {self.type} #{self.reference_objet} - {self.statut}"
 
 
+class Message(models.Model):
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="messages_envoyes",
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="messages_recus",
+    )
+    contenu = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message {self.sender_id} -> {self.recipient_id or 'staff'}"
+
+
 User = get_user_model()
 
 

@@ -22,6 +22,7 @@ export default function BibliothecaireEbooksPage() {
     prix: "",
     url_fichier: "",
   });
+  const [file, setFile] = useState<File | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -48,14 +49,18 @@ export default function BibliothecaireEbooksPage() {
     event.preventDefault();
     setError(null);
     try {
-      await api.post("/api/ebooks/", {
-        ouvrage: form.ouvrage || undefined,
-        format: form.format,
-        taille: form.taille ? Number(form.taille) : undefined,
-        nom_fichier: form.nom_fichier,
-        est_payant: form.est_payant,
-        prix: form.est_payant ? Number(form.prix) : undefined,
-        url_fichier: form.url_fichier || undefined,
+      const payload = new FormData();
+      if (form.ouvrage) payload.append("ouvrage", form.ouvrage);
+      payload.append("format", form.format);
+      if (form.taille) payload.append("taille", form.taille);
+      payload.append("nom_fichier", form.nom_fichier);
+      payload.append("est_payant", String(form.est_payant));
+      if (form.est_payant && form.prix) payload.append("prix", form.prix);
+      if (form.url_fichier) payload.append("url_fichier", form.url_fichier);
+      if (file) payload.append("fichier", file);
+
+      await api.post("/api/ebooks/", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       setOpen(false);
       setForm({
@@ -67,6 +72,7 @@ export default function BibliothecaireEbooksPage() {
         prix: "",
         url_fichier: "",
       });
+      setFile(null);
       await fetchData();
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Ajout impossible.");
@@ -164,6 +170,14 @@ export default function BibliothecaireEbooksPage() {
                 onChange={(event) => setForm({ ...form, url_fichier: event.target.value })}
                 className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
                 placeholder="https://..."
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Fichier e-book</label>
+              <input
+                type="file"
+                onChange={(event) => setFile(event.target.files?.[0] || null)}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
               />
             </div>
             <div>

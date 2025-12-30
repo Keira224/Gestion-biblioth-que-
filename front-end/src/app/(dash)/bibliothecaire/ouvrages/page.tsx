@@ -1,14 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
+import { Modal } from "../../../../components/Modal";
 
 export default function BibliothecaireOuvragesPage() {
   const [ouvrages, setOuvrages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [form, setForm] = useState({
+    isbn: "",
+    titre: "",
+    auteur: "",
+    editeur: "",
+    annee: "",
+    categorie: "",
+    type_ressource: "LIVRE",
+    nombre_exemplaires: "",
+  });
+  const [editForm, setEditForm] = useState({
+    isbn: "",
+    titre: "",
+    auteur: "",
+    editeur: "",
+    annee: "",
+    categorie: "",
+    type_ressource: "LIVRE",
+    disponible: true,
+  });
 
   useEffect(() => {
     const fetchOuvrages = async () => {
@@ -26,6 +51,88 @@ export default function BibliothecaireOuvragesPage() {
     fetchOuvrages();
   }, []);
 
+  const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    try {
+      await api.post("/api/catalogue/ouvrages/", {
+        isbn: form.isbn,
+        titre: form.titre,
+        auteur: form.auteur,
+        editeur: form.editeur || undefined,
+        annee: form.annee ? Number(form.annee) : undefined,
+        categorie: form.categorie,
+        type_ressource: form.type_ressource,
+        nombre_exemplaires: form.nombre_exemplaires ? Number(form.nombre_exemplaires) : 0,
+      });
+      setOpen(false);
+      setForm({
+        isbn: "",
+        titre: "",
+        auteur: "",
+        editeur: "",
+        annee: "",
+        categorie: "",
+        type_ressource: "LIVRE",
+        nombre_exemplaires: "",
+      });
+      const response = await api.get("/api/catalogue/ouvrages/");
+      setOuvrages(response.data.results || []);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Création impossible.");
+    }
+  };
+
+  const openEditModal = (ouvrage: any) => {
+    setSelectedId(ouvrage.id);
+    setEditForm({
+      isbn: ouvrage.isbn,
+      titre: ouvrage.titre,
+      auteur: ouvrage.auteur,
+      editeur: ouvrage.editeur || "",
+      annee: ouvrage.annee ? String(ouvrage.annee) : "",
+      categorie: ouvrage.categorie,
+      type_ressource: ouvrage.type_ressource,
+      disponible: ouvrage.disponible,
+    });
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedId) return;
+    setError(null);
+    try {
+      await api.patch(`/api/catalogue/ouvrages/${selectedId}/`, {
+        isbn: editForm.isbn,
+        titre: editForm.titre,
+        auteur: editForm.auteur,
+        editeur: editForm.editeur || undefined,
+        annee: editForm.annee ? Number(editForm.annee) : undefined,
+        categorie: editForm.categorie,
+        type_ressource: editForm.type_ressource,
+        disponible: editForm.disponible,
+      });
+      setEditOpen(false);
+      const response = await api.get("/api/catalogue/ouvrages/");
+      setOuvrages(response.data.results || []);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Modification impossible.");
+    }
+  };
+
+  const handleDelete = async (ouvrageId: number) => {
+    if (!confirm("Supprimer cet ouvrage ?")) return;
+    setError(null);
+    try {
+      await api.delete(`/api/catalogue/ouvrages/${ouvrageId}/`);
+      const response = await api.get("/api/catalogue/ouvrages/");
+      setOuvrages(response.data.results || []);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Suppression impossible.");
+    }
+  };
+
   return (
     <RoleGuard allowed={["BIBLIOTHECAIRE"]}>
       <div className="space-y-6">
@@ -35,7 +142,19 @@ export default function BibliothecaireOuvragesPage() {
           </div>
         )}
 
-        <TableCard title="Catalogue des ouvrages">
+        <TableCard
+          title="Catalogue des ouvrages"
+          action={
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              <Plus className="h-4 w-4" />
+              Ajouter un ouvrage
+            </button>
+          }
+        >
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase text-slate-400">
               <tr>
@@ -43,6 +162,7 @@ export default function BibliothecaireOuvragesPage() {
                 <th className="py-2">Auteur</th>
                 <th className="py-2">ISBN</th>
                 <th className="py-2">Disponibles</th>
+                <th className="py-2 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -52,11 +172,27 @@ export default function BibliothecaireOuvragesPage() {
                   <td className="py-3 text-slate-600">{ouvrage.auteur}</td>
                   <td className="py-3 text-slate-600">{ouvrage.isbn}</td>
                   <td className="py-3 text-slate-600">{ouvrage.exemplaires_disponibles}</td>
+                  <td className="py-3 text-right space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(ouvrage)}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(ouvrage.id)}
+                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600"
+                    >
+                      Supprimer
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!loading && ouvrages.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-sm text-slate-400">
+                  <td colSpan={5} className="py-6 text-center text-sm text-slate-400">
                     Aucun ouvrage.
                   </td>
                 </tr>
@@ -64,6 +200,198 @@ export default function BibliothecaireOuvragesPage() {
             </tbody>
           </table>
         </TableCard>
+
+        <Modal open={open} onClose={() => setOpen(false)} title="Ajouter un ouvrage">
+          <form className="space-y-4" onSubmit={handleCreate}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">ISBN</label>
+                <input
+                  value={form.isbn}
+                  onChange={(event) => setForm({ ...form, isbn: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Titre</label>
+                <input
+                  value={form.titre}
+                  onChange={(event) => setForm({ ...form, titre: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Auteur</label>
+                <input
+                  value={form.auteur}
+                  onChange={(event) => setForm({ ...form, auteur: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Éditeur</label>
+                <input
+                  value={form.editeur}
+                  onChange={(event) => setForm({ ...form, editeur: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Année</label>
+                <input
+                  type="number"
+                  value={form.annee}
+                  onChange={(event) => setForm({ ...form, annee: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Catégorie</label>
+                <input
+                  value={form.categorie}
+                  onChange={(event) => setForm({ ...form, categorie: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Type ressource</label>
+                <select
+                  value={form.type_ressource}
+                  onChange={(event) => setForm({ ...form, type_ressource: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="LIVRE">Livre</option>
+                  <option value="DVD">DVD</option>
+                  <option value="RESSOURCE_NUMERIQUE">Ressource numérique</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Nombre d'exemplaires</label>
+                <input
+                  type="number"
+                  value={form.nombre_exemplaires}
+                  onChange={(event) => setForm({ ...form, nombre_exemplaires: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Enregistrer l'ouvrage
+            </button>
+          </form>
+        </Modal>
+
+        <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Modifier un ouvrage">
+          <form className="space-y-4" onSubmit={handleUpdate}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">ISBN</label>
+                <input
+                  value={editForm.isbn}
+                  onChange={(event) => setEditForm({ ...editForm, isbn: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Titre</label>
+                <input
+                  value={editForm.titre}
+                  onChange={(event) => setEditForm({ ...editForm, titre: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Auteur</label>
+                <input
+                  value={editForm.auteur}
+                  onChange={(event) => setEditForm({ ...editForm, auteur: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Éditeur</label>
+                <input
+                  value={editForm.editeur}
+                  onChange={(event) => setEditForm({ ...editForm, editeur: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Année</label>
+                <input
+                  type="number"
+                  value={editForm.annee}
+                  onChange={(event) => setEditForm({ ...editForm, annee: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Catégorie</label>
+                <input
+                  value={editForm.categorie}
+                  onChange={(event) => setEditForm({ ...editForm, categorie: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Type ressource</label>
+                <select
+                  value={editForm.type_ressource}
+                  onChange={(event) => setEditForm({ ...editForm, type_ressource: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="LIVRE">Livre</option>
+                  <option value="DVD">DVD</option>
+                  <option value="RESSOURCE_NUMERIQUE">Ressource numérique</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Disponible</label>
+                <select
+                  value={editForm.disponible ? "true" : "false"}
+                  onChange={(event) =>
+                    setEditForm({ ...editForm, disponible: event.target.value === "true" })
+                  }
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="true">Oui</option>
+                  <option value="false">Non</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Mettre à jour
+            </button>
+          </form>
+        </Modal>
       </div>
     </RoleGuard>
   );

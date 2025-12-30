@@ -8,6 +8,7 @@ import {
   FileStack,
   LayoutDashboard,
   Layers,
+  MessageSquare,
   Users,
   UserSquare2,
   Wallet,
@@ -32,6 +33,7 @@ export const adminMenu: MenuItem[] = [
   { label: "Réservations", href: "/admin/reservations", icon: Layers },
   { label: "Demandes de livres", href: "/admin/demandes-livres", icon: FileStack },
   { label: "E-books", href: "/admin/ebooks", icon: BookOpen },
+  { label: "Messages", href: "/admin/messages", icon: MessageSquare },
   { label: "Statistiques", href: "/admin/statistiques", icon: BarChart3 },
 ];
 
@@ -43,9 +45,11 @@ export const bibliothecaireMenu: MenuItem[] = [
   { label: "Pénalités", href: "/bibliothecaire/penalites", icon: Wallet },
   { label: "Réservations", href: "/bibliothecaire/reservations", icon: Layers },
   { label: "Ouvrages", href: "/bibliothecaire/ouvrages", icon: BookOpen },
+  { label: "Exemplaires", href: "/bibliothecaire/exemplaires", icon: BookMarked },
   { label: "Adhérents", href: "/bibliothecaire/adherents", icon: UserSquare2 },
   { label: "Demandes de livres", href: "/bibliothecaire/demandes-livres", icon: FileStack },
   { label: "E-books", href: "/bibliothecaire/ebooks", icon: BookOpen },
+  { label: "Messages", href: "/bibliothecaire/messages", icon: MessageSquare },
 ];
 
 export const lecteurMenu: MenuItem[] = [
@@ -56,6 +60,7 @@ export const lecteurMenu: MenuItem[] = [
   { label: "Mes réservations", href: "/lecteur/reservations", icon: Layers },
   { label: "Demandes de livres", href: "/lecteur/demandes-livres", icon: FileStack },
   { label: "E-books", href: "/lecteur/ebooks", icon: BookOpen },
+  { label: "Messages", href: "/lecteur/messages", icon: MessageSquare },
   { label: "Profil", href: "/lecteur/profil", icon: UserSquare2 },
 ];
 
@@ -78,12 +83,15 @@ export const getPageTitle = (pathname: string) => {
   if (pathname.includes("/admin/reservations")) return "Gestion des réservations";
   if (pathname.includes("/admin/demandes-livres")) return "Demandes de livres";
   if (pathname.includes("/admin/ebooks")) return "Gestion des e-books";
+  if (pathname.includes("/admin/messages")) return "Messages";
   if (pathname.includes("/bibliothecaire/emprunts")) return "Création des emprunts";
   if (pathname.includes("/bibliothecaire/retours")) return "Gestion des retours";
   if (pathname.includes("/bibliothecaire/retards")) return "Emprunts en retard";
   if (pathname.includes("/bibliothecaire/reservations")) return "Réservations";
   if (pathname.includes("/bibliothecaire/demandes-livres")) return "Demandes de livres";
   if (pathname.includes("/bibliothecaire/ebooks")) return "Gestion des e-books";
+  if (pathname.includes("/bibliothecaire/messages")) return "Messages";
+  if (pathname.includes("/bibliothecaire/exemplaires")) return "Gestion des exemplaires";
   if (pathname.includes("/bibliothecaire/ouvrages")) return "Catalogue des ouvrages";
   if (pathname.includes("/bibliothecaire/adherents")) return "Gestion des adhérents";
   if (pathname.includes("/lecteur/mes-emprunts")) return "Mes emprunts";
@@ -92,6 +100,7 @@ export const getPageTitle = (pathname: string) => {
   if (pathname.includes("/lecteur/reservations")) return "Mes réservations";
   if (pathname.includes("/lecteur/demandes-livres")) return "Mes demandes";
   if (pathname.includes("/lecteur/ebooks")) return "E-books";
+  if (pathname.includes("/lecteur/messages")) return "Messages";
   if (pathname.includes("/lecteur/profil")) return "Mon profil";
   return "Tableau de bord";
 };

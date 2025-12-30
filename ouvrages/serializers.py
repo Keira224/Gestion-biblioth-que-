@@ -116,3 +116,12 @@ class EbookCreateSerializer(serializers.ModelSerializer):
             "url_fichier",
             "fichier",
         ]
+
+    def validate(self, attrs):
+        fichier = attrs.get("fichier")
+        url = attrs.get("url_fichier")
+        if not fichier and not url:
+            raise serializers.ValidationError("Fichier ou URL requis.")
+        if attrs.get("est_payant") and not attrs.get("prix"):
+            raise serializers.ValidationError("Prix requis pour un e-book payant.")
+        return attrs

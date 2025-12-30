@@ -10,7 +10,8 @@ class AdherentListSerializer(serializers.ModelSerializer):
     nom = serializers.CharField(source="user.last_name", read_only=True)
     prenom = serializers.CharField(source="user.first_name", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
 
     class Meta:
         model = Adherent
-        fields = ["id", "username", "nom", "prenom", "email", "telephone", "adresse"]
+        fields = ["id", "user_id", "username", "nom", "prenom", "email", "telephone", "adresse"]
