@@ -33,6 +33,7 @@ npm run dev
 - `/admin/emprunts`
 - `/admin/retards`
 - `/admin/penalites`
+- `/admin/reservations`
 - `/admin/statistiques`
 
 ### BIBLIOTHÉCAIRE
@@ -41,6 +42,7 @@ npm run dev
 - `/bibliothecaire/retours`
 - `/bibliothecaire/retards`
 - `/bibliothecaire/penalites`
+- `/bibliothecaire/reservations`
 - `/bibliothecaire/ouvrages`
 - `/bibliothecaire/adherents`
 
