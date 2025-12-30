@@ -17,6 +17,9 @@ const statuts = [
 
 export default function AdminDemandesLivresPage() {
   const [demandes, setDemandes] = useState<any[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, pages: 1 });
+  const [search, setSearch] = useState("");
+  const [statutFilter, setStatutFilter] = useState("");
   const [ouvrages, setOuvrages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,10 +32,17 @@ export default function AdminDemandesLivresPage() {
     setError(null);
     try {
       const [demandesRes, ouvragesRes] = await Promise.all([
-        api.get("/api/demandes-livres/"),
+        api.get("/api/demandes-livres/", {
+          params: {
+            page: pagination.page,
+            search: search || undefined,
+            statut: statutFilter || undefined,
+          },
+        }),
         api.get("/api/catalogue/ouvrages/"),
       ]);
       setDemandes(demandesRes.data.results || []);
+      setPagination(demandesRes.data.pagination || { page: 1, pages: 1 });
       setOuvrages(ouvragesRes.data.results || []);
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Impossible de charger les demandes.");
@@ -43,7 +53,8 @@ export default function AdminDemandesLivresPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page, search, statutFilter]);
 
   const openModal = (demande: any) => {
     setSelected(demande);
@@ -80,6 +91,32 @@ export default function AdminDemandesLivresPage() {
         )}
 
         <TableCard title="Demandes de livres">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <input
+              value={search}
+              onChange={(event) => {
+                setPagination((prev) => ({ ...prev, page: 1 }));
+                setSearch(event.target.value);
+              }}
+              className="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Rechercher..."
+            />
+            <select
+              value={statutFilter}
+              onChange={(event) => {
+                setPagination((prev) => ({ ...prev, page: 1 }));
+                setStatutFilter(event.target.value);
+              }}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            >
+              <option value="">Tous les statuts</option>
+              {statuts.map((statut) => (
+                <option key={statut} value={statut}>
+                  {statut}
+                </option>
+              ))}
+            </select>
+          </div>
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase text-slate-400">
               <tr>
@@ -117,6 +154,29 @@ export default function AdminDemandesLivresPage() {
               )}
             </tbody>
           </table>
+          <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+            <span>
+              Page {pagination.page} / {pagination.pages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                disabled={pagination.page <= 1}
+                className="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50"
+              >
+                Précédent
+              </button>
+              <button
+                type="button"
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                disabled={pagination.page >= pagination.pages}
+                className="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50"
+              >
+                Suivant
+              </button>
+            </div>
+          </div>
         </TableCard>
 
         <Modal open={open} onClose={() => setOpen(false)} title="Mettre à jour la demande">

@@ -10,6 +10,8 @@ import { formatDate } from "../../../../lib/format";
 
 export default function BibliothecaireEmpruntsPage() {
   const [emprunts, setEmprunts] = useState<any[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, pages: 1 });
+  const [search, setSearch] = useState("");
   const [adherents, setAdherents] = useState<any[]>([]);
   const [exemplaires, setExemplaires] = useState<any[]>([]);
   const [form, setForm] = useState({ adherentId: "", exemplaireId: "" });
@@ -22,11 +24,14 @@ export default function BibliothecaireEmpruntsPage() {
     setError(null);
     try {
       const [empruntsRes, adherentsRes, exemplairesRes] = await Promise.all([
-        api.get("/api/emprunts/en-cours/"),
+        api.get("/api/emprunts/en-cours/", {
+          params: { page: pagination.page, search: search || undefined },
+        }),
         api.get("/api/adherents/"),
         api.get("/api/catalogue/exemplaires-disponibles/"),
       ]);
       setEmprunts(empruntsRes.data.results || []);
+      setPagination(empruntsRes.data.pagination || { page: 1, pages: 1 });
       setAdherents(adherentsRes.data.results || []);
       setExemplaires(exemplairesRes.data.results || []);
       if (!form.adherentId && adherentsRes.data.results?.length) {
@@ -44,7 +49,8 @@ export default function BibliothecaireEmpruntsPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page, search]);
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -83,6 +89,17 @@ export default function BibliothecaireEmpruntsPage() {
             </button>
           }
         >
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <input
+              value={search}
+              onChange={(event) => {
+                setPagination((prev) => ({ ...prev, page: 1 }));
+                setSearch(event.target.value);
+              }}
+              className="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Rechercher..."
+            />
+          </div>
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase text-slate-400">
               <tr>
@@ -110,6 +127,29 @@ export default function BibliothecaireEmpruntsPage() {
               )}
             </tbody>
           </table>
+          <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+            <span>
+              Page {pagination.page} / {pagination.pages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                disabled={pagination.page <= 1}
+                className="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50"
+              >
+                Précédent
+              </button>
+              <button
+                type="button"
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                disabled={pagination.page >= pagination.pages}
+                className="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50"
+              >
+                Suivant
+              </button>
+            </div>
+          </div>
         </TableCard>
 
         <Modal open={open} onClose={() => setOpen(false)} title="Créer un emprunt">

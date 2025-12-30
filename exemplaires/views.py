@@ -1,5 +1,5 @@
 # Role de ce fichier: endpoints DRF pour exemplaires.
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -52,6 +52,12 @@ def exemplaires_par_ouvrage(request, ouvrage_id: int):
             .annotate(emprunts_count=Count("emprunts"))
             .order_by("code_barre")
         )
+        search = request.query_params.get("search")
+        if search:
+            qs = qs.filter(code_barre__icontains=search)
+        etat = request.query_params.get("etat")
+        if etat:
+            qs = qs.filter(etat=etat)
         items, meta = paginate_queryset(qs, request, default_page_size=20)
         return Response({"results": ExemplaireSerializer(items, many=True).data, "pagination": meta})
 
