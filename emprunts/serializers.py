@@ -88,7 +88,10 @@ class ReservationSerializer(serializers.ModelSerializer):
             "ouvrage_auteur",
             "adherent",
             "adherent_username",
+            "date_debut",
+            "date_fin",
             "statut",
+            "montant_estime",
             "date_creation",
             "date_traitement",
         ]
@@ -97,3 +100,5 @@ class ReservationSerializer(serializers.ModelSerializer):
 class ReservationCreateSerializer(serializers.Serializer):
     # Input creation reservation lecteur.
     ouvrage_id = serializers.IntegerField()
+    date_debut = serializers.DateField()
+    date_fin = serializers.DateField()

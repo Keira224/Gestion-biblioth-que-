@@ -2,6 +2,7 @@
 from rest_framework import serializers
 
 from .models import Ouvrage
+from .models import DemandeLivre, Ebook
 
 
 class OuvrageSerializer(serializers.ModelSerializer):
@@ -50,3 +51,68 @@ class OuvrageUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ouvrage
         fields = ["isbn", "titre", "auteur", "editeur", "annee", "categorie", "type_ressource", "disponible"]
+
+
+class DemandeLivreSerializer(serializers.ModelSerializer):
+    adherent_username = serializers.CharField(source="adherent.user.username", read_only=True)
+
+    class Meta:
+        model = DemandeLivre
+        fields = [
+            "id",
+            "titre",
+            "auteur",
+            "isbn",
+            "description",
+            "urgence",
+            "statut",
+            "ouvrage",
+            "adherent",
+            "adherent_username",
+            "date_creation",
+            "date_traitement",
+        ]
+
+
+class DemandeLivreCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DemandeLivre
+        fields = ["titre", "auteur", "isbn", "description", "urgence"]
+
+
+class DemandeLivreStatusSerializer(serializers.Serializer):
+    statut = serializers.ChoiceField(choices=DemandeLivre._meta.get_field("statut").choices)
+    ouvrage_id = serializers.IntegerField(required=False)
+
+
+class EbookSerializer(serializers.ModelSerializer):
+    ouvrage_titre = serializers.CharField(source="ouvrage.titre", read_only=True)
+
+    class Meta:
+        model = Ebook
+        fields = [
+            "id",
+            "ouvrage",
+            "ouvrage_titre",
+            "format",
+            "taille",
+            "nom_fichier",
+            "est_payant",
+            "prix",
+            "url_fichier",
+        ]
+
+
+class EbookCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ebook
+        fields = [
+            "ouvrage",
+            "format",
+            "taille",
+            "nom_fichier",
+            "est_payant",
+            "prix",
+            "url_fichier",
+            "fichier",
+        ]

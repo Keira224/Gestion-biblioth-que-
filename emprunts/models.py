@@ -80,8 +80,11 @@ class Penalite(models.Model):
 class StatutReservation(models.TextChoices):
     # Statuts possibles d'une reservation.
     EN_ATTENTE = "EN_ATTENTE", "En attente"
+    VALIDEE = "VALIDEE", "Validee"
+    REFUSEE = "REFUSEE", "Refusee"
     ANNULEE = "ANNULEE", "Annulee"
-    HONOREE = "HONOREE", "Honoree"
+    EXPIREE = "EXPIREE", "Expiree"
+    REMISE = "REMISE", "Remise"
 
 
 class Reservation(models.Model):
@@ -96,18 +99,21 @@ class Reservation(models.Model):
         on_delete=models.CASCADE,
         related_name="reservations",
     )
+    date_debut = models.DateField()
+    date_fin = models.DateField()
     statut = models.CharField(
         max_length=20,
         choices=StatutReservation.choices,
         default=StatutReservation.EN_ATTENTE,
     )
+    montant_estime = models.DecimalField(max_digits=10, decimal_places=2)
     date_creation = models.DateTimeField(auto_now_add=True)
     date_traitement = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["adherent", "ouvrage"],
+                fields=["adherent", "ouvrage", "date_debut", "date_fin"],
                 condition=models.Q(statut=StatutReservation.EN_ATTENTE),
                 name="unique_active_reservation",
             ),

@@ -6,7 +6,7 @@ import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
 import { formatDate, formatMoney } from "../../../../lib/format";
 
-export default function AdminReservationsPage() {
+export default function LecteurReservationsPage() {
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,10 +15,10 @@ export default function AdminReservationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get("/api/reservations/");
+      const response = await api.get("/api/reservations/me/");
       setReservations(response.data.results || []);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Impossible de charger les réservations.");
+      setError(err?.response?.data?.detail || "Impossible de charger vos réservations.");
     } finally {
       setLoading(false);
     }
@@ -28,26 +28,17 @@ export default function AdminReservationsPage() {
     fetchReservations();
   }, []);
 
-  const handleValider = async (reservationId: number) => {
+  const handleCancel = async (reservationId: number) => {
     try {
-      await api.post(`/api/reservations/${reservationId}/valider/`);
+      await api.post(`/api/reservations/${reservationId}/annuler/`);
       await fetchReservations();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Impossible de valider la réservation.");
-    }
-  };
-
-  const handleRefuser = async (reservationId: number) => {
-    try {
-      await api.post(`/api/reservations/${reservationId}/refuser/`);
-      await fetchReservations();
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || "Impossible de refuser la réservation.");
+      setError(err?.response?.data?.detail || "Annulation impossible.");
     }
   };
 
   return (
-    <RoleGuard allowed={["ADMIN"]}>
+    <RoleGuard allowed={["LECTEUR"]}>
       <div className="space-y-6">
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -55,14 +46,13 @@ export default function AdminReservationsPage() {
           </div>
         )}
 
-        <TableCard title="Gestion des réservations">
+        <TableCard title="Mes réservations">
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase text-slate-400">
               <tr>
-                <th className="py-2">Lecteur</th>
                 <th className="py-2">Ouvrage</th>
-                <th className="py-2">Statut</th>
                 <th className="py-2">Période</th>
+                <th className="py-2">Statut</th>
                 <th className="py-2">Montant</th>
                 <th className="py-2 text-right">Action</th>
               </tr>
@@ -70,36 +60,27 @@ export default function AdminReservationsPage() {
             <tbody>
               {reservations.map((reservation) => (
                 <tr key={reservation.id} className="border-t border-slate-100">
-                  <td className="py-3 text-slate-700">{reservation.adherent_username}</td>
-                  <td className="py-3 text-slate-600">{reservation.ouvrage_titre}</td>
-                  <td className="py-3 text-slate-600">{reservation.statut}</td>
+                  <td className="py-3 text-slate-700">{reservation.ouvrage_titre}</td>
                   <td className="py-3 text-slate-600">
                     {formatDate(reservation.date_debut)} → {formatDate(reservation.date_fin)}
                   </td>
+                  <td className="py-3 text-slate-600">{reservation.statut}</td>
                   <td className="py-3 text-slate-600">{formatMoney(reservation.montant_estime)}</td>
                   <td className="py-3 text-right">
                     <button
                       type="button"
                       disabled={reservation.statut !== "EN_ATTENTE"}
-                      onClick={() => handleValider(reservation.id)}
-                      className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                      onClick={() => handleCancel(reservation.id)}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 disabled:opacity-50"
                     >
-                      Valider
-                    </button>
-                    <button
-                      type="button"
-                      disabled={reservation.statut !== "EN_ATTENTE"}
-                      onClick={() => handleRefuser(reservation.id)}
-                      className="ml-2 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
-                    >
-                      Refuser
+                      Annuler
                     </button>
                   </td>
                 </tr>
               ))}
               {!loading && reservations.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-sm text-slate-400">
+                  <td colSpan={5} className="py-6 text-center text-sm text-slate-400">
                     Aucune réservation.
                   </td>
                 </tr>

@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
+import { Modal } from "../../../../components/Modal";
 
 export default function LecteurCataloguePage() {
   const [ouvrages, setOuvrages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<any | null>(null);
+  const [dates, setDates] = useState({ date_debut: "", date_fin: "" });
 
   useEffect(() => {
     const fetchCatalogue = async () => {
@@ -28,12 +32,19 @@ export default function LecteurCataloguePage() {
     fetchCatalogue();
   }, []);
 
-  const handleReserve = async (ouvrageId: number) => {
+  const handleReserve = async () => {
     setError(null);
     setMessage(null);
+    if (!selected) return;
     try {
-      await api.post("/api/reservations/", { ouvrage_id: ouvrageId });
+      await api.post("/api/reservations/", {
+        ouvrage_id: selected.id,
+        date_debut: dates.date_debut,
+        date_fin: dates.date_fin,
+      });
       setMessage("Réservation enregistrée avec succès.");
+      setOpen(false);
+      setDates({ date_debut: "", date_fin: "" });
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Impossible de réserver cet ouvrage.");
     }
@@ -74,7 +85,10 @@ export default function LecteurCataloguePage() {
                   <td className="py-3 text-right">
                     <button
                       type="button"
-                      onClick={() => handleReserve(ouvrage.id)}
+                      onClick={() => {
+                        setSelected(ouvrage);
+                        setOpen(true);
+                      }}
                       className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
                     >
                       Réserver
@@ -92,6 +106,41 @@ export default function LecteurCataloguePage() {
             </tbody>
           </table>
         </TableCard>
+
+        <Modal open={open} onClose={() => setOpen(false)} title="Réserver un ouvrage">
+          <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            {selected?.titre} · {selected?.auteur}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Date début</label>
+              <input
+                type="date"
+                value={dates.date_debut}
+                onChange={(event) => setDates({ ...dates, date_debut: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Date fin</label>
+              <input
+                type="date"
+                value={dates.date_fin}
+                onChange={(event) => setDates({ ...dates, date_fin: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleReserve}
+            className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Confirmer la réservation
+          </button>
+        </Modal>
       </div>
     </RoleGuard>
   );

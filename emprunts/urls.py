@@ -17,8 +17,10 @@ from .views import (
     stats_dashboard,
     dashboard_activities,
     reservations,
+    mes_reservations,
     annuler_reservation,
-    honorer_reservation,
+    valider_reservation,
+    refuser_reservation,
 )
 
 urlpatterns = [
@@ -44,6 +46,8 @@ urlpatterns = [
 
     # Reservations
     path("api/reservations/", reservations),
+    path("api/reservations/me/", mes_reservations),
     path("api/reservations/<int:reservation_id>/annuler/", annuler_reservation),
-    path("api/reservations/<int:reservation_id>/honorer/", honorer_reservation),
+    path("api/reservations/<int:reservation_id>/valider/", valider_reservation),
+    path("api/reservations/<int:reservation_id>/refuser/", refuser_reservation),
 ]

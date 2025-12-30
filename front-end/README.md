@@ -34,6 +34,8 @@ npm run dev
 - `/admin/retards`
 - `/admin/penalites`
 - `/admin/reservations`
+- `/admin/demandes-livres`
+- `/admin/ebooks`
 - `/admin/statistiques`
 
 ### BIBLIOTHÉCAIRE
@@ -45,12 +47,17 @@ npm run dev
 - `/bibliothecaire/reservations`
 - `/bibliothecaire/ouvrages`
 - `/bibliothecaire/adherents`
+- `/bibliothecaire/demandes-livres`
+- `/bibliothecaire/ebooks`
 
 ### LECTEUR
 - `/lecteur` : tableau de bord
 - `/lecteur/mes-emprunts`
 - `/lecteur/mes-penalites`
 - `/lecteur/catalogue`
+- `/lecteur/reservations`
+- `/lecteur/demandes-livres`
+- `/lecteur/ebooks`
 - `/lecteur/profil`
 
 ## Authentification
