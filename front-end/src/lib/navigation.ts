@@ -6,6 +6,7 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  Layers,
   Users,
   UserSquare2,
   Wallet,
@@ -27,6 +28,7 @@ export const adminMenu: MenuItem[] = [
   { label: "Emprunts", href: "/admin/emprunts", icon: ClipboardList },
   { label: "Retards", href: "/admin/retards", icon: AlertTriangle },
   { label: "Pénalités", href: "/admin/penalites", icon: Wallet },
+  { label: "Réservations", href: "/admin/reservations", icon: Layers },
   { label: "Statistiques", href: "/admin/statistiques", icon: BarChart3 },
 ];
 
@@ -36,6 +38,7 @@ export const bibliothecaireMenu: MenuItem[] = [
   { label: "Retours", href: "/bibliothecaire/retours", icon: FileText },
   { label: "Retards", href: "/bibliothecaire/retards", icon: AlertTriangle },
   { label: "Pénalités", href: "/bibliothecaire/penalites", icon: Wallet },
+  { label: "Réservations", href: "/bibliothecaire/reservations", icon: Layers },
   { label: "Ouvrages", href: "/bibliothecaire/ouvrages", icon: BookOpen },
   { label: "Adhérents", href: "/bibliothecaire/adherents", icon: UserSquare2 },
 ];
@@ -64,9 +67,11 @@ export const getPageTitle = (pathname: string) => {
   if (pathname.includes("/admin/exemplaires")) return "Gestion des exemplaires";
   if (pathname.includes("/admin/emprunts")) return "Gestion des emprunts";
   if (pathname.includes("/admin/penalites")) return "Gestion des pénalités";
+  if (pathname.includes("/admin/reservations")) return "Gestion des réservations";
   if (pathname.includes("/bibliothecaire/emprunts")) return "Création des emprunts";
   if (pathname.includes("/bibliothecaire/retours")) return "Gestion des retours";
   if (pathname.includes("/bibliothecaire/retards")) return "Emprunts en retard";
+  if (pathname.includes("/bibliothecaire/reservations")) return "Réservations";
   if (pathname.includes("/bibliothecaire/ouvrages")) return "Catalogue des ouvrages";
   if (pathname.includes("/bibliothecaire/adherents")) return "Gestion des adhérents";
   if (pathname.includes("/lecteur/mes-emprunts")) return "Mes emprunts";

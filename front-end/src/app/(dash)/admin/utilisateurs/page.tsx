@@ -15,11 +15,22 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [form, setForm] = useState({
     username: "",
     email: "",
     password: "",
     role: "LECTEUR" as UserRole,
+    adresse: "",
+    telephone: "",
+    cotisation: "",
+  });
+  const [editForm, setEditForm] = useState({
+    username: "",
+    email: "",
+    role: "LECTEUR" as UserRole,
+    is_active: true,
     adresse: "",
     telephone: "",
     cotisation: "",
@@ -71,6 +82,51 @@ export default function AdminUsersPage() {
     }
   };
 
+  const openEditModal = (user: any) => {
+    setSelectedUserId(user.id);
+    setEditForm({
+      username: user.username || "",
+      email: user.email || "",
+      role: user.role as UserRole,
+      is_active: user.is_active,
+      adresse: user.adherent?.adresse || "",
+      telephone: user.adherent?.telephone || "",
+      cotisation: user.adherent?.cotisation || "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedUserId) return;
+    setError(null);
+    try {
+      await api.patch(`/api/admin/users/${selectedUserId}/`, {
+        username: editForm.username,
+        email: editForm.email || undefined,
+        role: editForm.role,
+        is_active: editForm.is_active,
+        adresse: editForm.role === "LECTEUR" ? editForm.adresse : undefined,
+        telephone: editForm.role === "LECTEUR" ? editForm.telephone : undefined,
+        cotisation: editForm.role === "LECTEUR" ? editForm.cotisation || 0 : undefined,
+      });
+      setEditOpen(false);
+      await fetchUsers();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Modification impossible.");
+    }
+  };
+
+  const handleDeactivate = async (userId: number) => {
+    setError(null);
+    try {
+      await api.delete(`/api/admin/users/${userId}/`);
+      await fetchUsers();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Désactivation impossible.");
+    }
+  };
+
   return (
     <RoleGuard allowed={["ADMIN"]}>
       <div className="space-y-6">
@@ -100,6 +156,7 @@ export default function AdminUsersPage() {
                 <th className="py-2">Email</th>
                 <th className="py-2">Rôle</th>
                 <th className="py-2">Statut</th>
+                <th className="py-2 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -109,11 +166,27 @@ export default function AdminUsersPage() {
                   <td className="py-3 text-slate-600">{user.email || "-"}</td>
                   <td className="py-3 text-slate-600">{user.role}</td>
                   <td className="py-3 text-slate-600">{user.is_active ? "Actif" : "Inactif"}</td>
+                  <td className="py-3 text-right space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(user)}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeactivate(user.id)}
+                      className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white"
+                    >
+                      Désactiver
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!loading && users.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-sm text-slate-400">
+                  <td colSpan={5} className="py-6 text-center text-sm text-slate-400">
                     Aucun utilisateur trouvé.
                   </td>
                 </tr>
@@ -213,6 +286,107 @@ export default function AdminUsersPage() {
               className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Enregistrer
+            </button>
+          </form>
+        </Modal>
+
+        <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Modifier un utilisateur">
+          <form className="space-y-4" onSubmit={handleUpdate}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Nom d'utilisateur</label>
+                <input
+                  value={editForm.username}
+                  onChange={(event) => setEditForm({ ...editForm, username: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(event) => setEditForm({ ...editForm, email: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Rôle</label>
+                <select
+                  value={editForm.role}
+                  onChange={(event) =>
+                    setEditForm({
+                      ...editForm,
+                      role: event.target.value as UserRole,
+                    })
+                  }
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  {roleOptions.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Statut</label>
+                <select
+                  value={editForm.is_active ? "actif" : "inactif"}
+                  onChange={(event) =>
+                    setEditForm({
+                      ...editForm,
+                      is_active: event.target.value === "actif",
+                    })
+                  }
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="actif">Actif</option>
+                  <option value="inactif">Inactif</option>
+                </select>
+              </div>
+            </div>
+
+            {editForm.role === "LECTEUR" && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">Adresse</label>
+                  <input
+                    value={editForm.adresse}
+                    onChange={(event) => setEditForm({ ...editForm, adresse: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">Téléphone</label>
+                  <input
+                    value={editForm.telephone}
+                    onChange={(event) => setEditForm({ ...editForm, telephone: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">Cotisation</label>
+                  <input
+                    type="number"
+                    value={editForm.cotisation}
+                    onChange={(event) => setEditForm({ ...editForm, cotisation: event.target.value })}
+                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Mettre à jour
             </button>
           </form>
         </Modal>
