@@ -8,6 +8,9 @@ import { formatDate, formatMoney } from "../../../../lib/format";
 
 export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState<any[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, pages: 1 });
+  const [search, setSearch] = useState("");
+  const [statutFilter, setStatutFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,8 +18,15 @@ export default function AdminReservationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get("/api/reservations/");
+      const response = await api.get("/api/reservations/", {
+        params: {
+          page: pagination.page,
+          search: search || undefined,
+          statut: statutFilter || undefined,
+        },
+      });
       setReservations(response.data.results || []);
+      setPagination(response.data.pagination || { page: 1, pages: 1 });
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Impossible de charger les réservations.");
     } finally {
@@ -26,7 +36,7 @@ export default function AdminReservationsPage() {
 
   useEffect(() => {
     fetchReservations();
-  }, []);
+  }, [pagination.page, search, statutFilter]);
 
   const handleValider = async (reservationId: number) => {
     try {
@@ -56,6 +66,33 @@ export default function AdminReservationsPage() {
         )}
 
         <TableCard title="Gestion des réservations">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <input
+              value={search}
+              onChange={(event) => {
+                setPagination((prev) => ({ ...prev, page: 1 }));
+                setSearch(event.target.value);
+              }}
+              className="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Rechercher..."
+            />
+            <select
+              value={statutFilter}
+              onChange={(event) => {
+                setPagination((prev) => ({ ...prev, page: 1 }));
+                setStatutFilter(event.target.value);
+              }}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            >
+              <option value="">Tous les statuts</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="VALIDEE">Validée</option>
+              <option value="REFUSEE">Refusée</option>
+              <option value="ANNULEE">Annulée</option>
+              <option value="EXPIREE">Expirée</option>
+              <option value="REMISE">Remise</option>
+            </select>
+          </div>
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase text-slate-400">
               <tr>
@@ -106,6 +143,29 @@ export default function AdminReservationsPage() {
               )}
             </tbody>
           </table>
+          <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+            <span>
+              Page {pagination.page} / {pagination.pages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                disabled={pagination.page <= 1}
+                className="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50"
+              >
+                Précédent
+              </button>
+              <button
+                type="button"
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                disabled={pagination.page >= pagination.pages}
+                className="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50"
+              >
+                Suivant
+              </button>
+            </div>
+          </div>
         </TableCard>
       </div>
     </RoleGuard>

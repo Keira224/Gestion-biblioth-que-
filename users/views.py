@@ -12,6 +12,9 @@ from rest_framework.response import Response
 from adherents.models import Adherent
 from core.models import ActivityType, log_activity
 from core.views import apply_ordering, paginate_queryset
+from core.models import Paiement, Message
+from emprunts.models import Emprunt, Reservation
+from ouvrages.models import DemandeLivre
 
 from .models import UserProfile, UserRole
 from .serializers import (
@@ -289,6 +292,17 @@ def admin_user_delete(request, user_id: int):
 
     if user == request.user:
         return Response({"detail": "Suppression du compte courant interdite."}, status=status.HTTP_400_BAD_REQUEST)
+
+    adherent = getattr(user, "adherent", None)
+    if adherent:
+        # Supprime les reservations, emprunts, demandes associes avant suppression.
+        Reservation.objects.filter(adherent=adherent).delete()
+        Emprunt.objects.filter(adherent=adherent).delete()
+        DemandeLivre.objects.filter(adherent=adherent).delete()
+
+    Paiement.objects.filter(user=user).delete()
+    Message.objects.filter(sender=user).delete()
+    Message.objects.filter(recipient=user).delete()
 
     user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)

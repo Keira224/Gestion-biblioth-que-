@@ -50,6 +50,9 @@ export default function LecteurMessagesPage() {
             {error}
           </div>
         )}
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+          Fonctionnalité en cours d’amélioration. Les prochaines mises à jour la rendront totalement opérationnelle.
+        </div>
 
         <TableCard title="Messages">
           <div className="space-y-4">

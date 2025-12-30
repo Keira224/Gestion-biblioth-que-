@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Optional
 
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -402,6 +402,13 @@ def emprunts_historique(request):
         if adherent_id:
             qs = qs.filter(adherent_id=adherent_id)
 
+    search = request.query_params.get("search")
+    if search:
+        qs = qs.filter(
+            Q(exemplaire__ouvrage__titre__icontains=search)
+            | Q(adherent__user__username__icontains=search)
+        )
+
     qs = apply_ordering(
         qs,
         request,
@@ -426,6 +433,13 @@ def emprunts_retards(request):
     if role == UserRole.LECTEUR:
         qs = qs.filter(adherent__user=request.user)
 
+    search = request.query_params.get("search")
+    if search:
+        qs = qs.filter(
+            Q(exemplaire__ouvrage__titre__icontains=search)
+            | Q(adherent__user__username__icontains=search)
+        )
+
     qs = apply_ordering(
         qs,
         request,
@@ -445,6 +459,13 @@ def emprunts_en_cours(request):
         "exemplaire__ouvrage",
         "adherent__user",
     )
+
+    search = request.query_params.get("search")
+    if search:
+        qs = qs.filter(
+            Q(exemplaire__ouvrage__titre__icontains=search)
+            | Q(adherent__user__username__icontains=search)
+        )
 
     qs = apply_ordering(
         qs,
@@ -468,6 +489,17 @@ def liste_penalites(request):
         "emprunt__exemplaire__ouvrage",
         "emprunt__adherent__user",
     )
+    search = request.query_params.get("search")
+    if search:
+        qs = qs.filter(
+            Q(emprunt__adherent__user__username__icontains=search)
+            | Q(emprunt__exemplaire__ouvrage__titre__icontains=search)
+            | Q(emprunt__exemplaire__code_barre__icontains=search)
+        )
+    payee = request.query_params.get("payee")
+    if payee in {"true", "false"}:
+        qs = qs.filter(payee=(payee == "true"))
+
     qs = apply_ordering(
         qs,
         request,
@@ -578,6 +610,12 @@ def reservations(request):
         statut = request.query_params.get("statut")
         if statut:
             qs = qs.filter(statut=statut)
+        search = request.query_params.get("search")
+        if search:
+            qs = qs.filter(
+                Q(ouvrage__titre__icontains=search)
+                | Q(adherent__user__username__icontains=search)
+            )
 
         qs = apply_ordering(
             qs,

@@ -174,6 +174,17 @@ def demandes_livres(request):
             qs = DemandeLivre.objects.select_related("adherent__user", "ouvrage")
         else:
             qs = DemandeLivre.objects.filter(adherent__user=request.user).select_related("adherent__user", "ouvrage")
+        search = request.query_params.get("search")
+        if search:
+            qs = qs.filter(
+                Q(titre__icontains=search)
+                | Q(auteur__icontains=search)
+                | Q(isbn__icontains=search)
+                | Q(adherent__user__username__icontains=search)
+            )
+        statut = request.query_params.get("statut")
+        if statut:
+            qs = qs.filter(statut=statut)
         qs = apply_ordering(
             qs,
             request,
@@ -235,6 +246,15 @@ def ebooks(request):
     # Liste ou creation d'ebooks.
     if request.method == "GET":
         qs = Ebook.objects.select_related("ouvrage")
+        search = request.query_params.get("search")
+        if search:
+            qs = qs.filter(
+                Q(nom_fichier__icontains=search)
+                | Q(ouvrage__titre__icontains=search)
+            )
+        est_payant = request.query_params.get("est_payant")
+        if est_payant in {"true", "false"}:
+            qs = qs.filter(est_payant=(est_payant == "true"))
         qs = apply_ordering(qs, request, allowed_fields=["nom_fichier", "format", "est_payant"], default="nom_fichier")
         items, meta = paginate_queryset(qs, request, default_page_size=10)
         return Response({"results": EbookSerializer(items, many=True).data, "pagination": meta})
