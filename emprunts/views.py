@@ -50,6 +50,14 @@ def get_tarif_penalite_par_jour() -> Decimal:
         return TARIF_PAR_JOUR_DEFAUT
 
 
+def get_tarif_reservation_par_jour() -> Decimal:
+    # Retourne le tarif reservation en base, fallback si erreur.
+    try:
+        return Decimal(get_parametres().tarif_reservation_par_jour)
+    except Exception:
+        return TARIF_PAR_JOUR_DEFAUT
+
+
 def get_duree_emprunt_jours() -> int:
     # Retourne la duree d'emprunt en jours.
     try:
@@ -226,6 +234,10 @@ def resume_dashboard(user=None):
         "nb_emprunts_en_retard": emprunts.filter(statut="EN_RETARD").count(),
         "nb_penalites_impayees": penalites.filter(payee=False).count(),
     }
+
+
+def reservation_date_overlap(start_a, end_a, start_b, end_b) -> bool:
+    return start_a <= end_b and start_b <= end_a
 
 
 # -----------------------------
@@ -556,8 +568,7 @@ def dashboard_activities(request):
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def reservations(request):
-    # Ce que ca fait: liste ou creation de reservations.
-    # Permissions: GET auth, POST lecteur.
+    # Liste ou creation de reservations.
     if request.method == "GET":
         role = get_user_role(request.user)
         qs = Reservation.objects.select_related("ouvrage", "adherent__user")
@@ -593,24 +604,60 @@ def reservations(request):
     except Ouvrage.DoesNotExist:
         return Response({"detail": "Ouvrage introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
-    reservation, created = Reservation.objects.get_or_create(
-        adherent=adherent,
-        ouvrage=ouvrage,
-        statut=StatutReservation.EN_ATTENTE,
-    )
-    if not created:
-        return Response(
-            {"detail": "Reservation deja existante."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    date_debut = serializer.validated_data["date_debut"]
+    date_fin = serializer.validated_data["date_fin"]
 
-    return Response(ReservationSerializer(reservation).data, status=status.HTTP_201_CREATED)
+    if date_fin <= date_debut:
+        return Response({"detail": "Date de fin invalide."}, status=status.HTTP_400_BAD_REQUEST)
+
+    exemplaires_total = Exemplaire.objects.filter(ouvrage=ouvrage).count()
+    if exemplaires_total == 0:
+        return Response({"detail": "Aucun exemplaire pour cet ouvrage."}, status=status.HTTP_400_BAD_REQUEST)
+
+    reservations_overlap = Reservation.objects.filter(
+        ouvrage=ouvrage,
+        statut__in=[StatutReservation.EN_ATTENTE, StatutReservation.VALIDEE],
+        date_debut__lte=date_fin,
+        date_fin__gte=date_debut,
+    ).count()
+
+    emprunts_overlap = Emprunt.objects.filter(
+        exemplaire__ouvrage=ouvrage,
+        statut__in=[StatutEmprunt.EN_COURS, StatutEmprunt.EN_RETARD],
+        date_retour_prevue__gte=date_debut,
+    ).count()
+
+    if reservations_overlap + emprunts_overlap >= exemplaires_total:
+        tarif = get_tarif_reservation_par_jour()
+        jours = (date_fin - date_debut).days
+        montant = Decimal(jours) * Decimal(tarif)
+        reservation = Reservation.objects.create(
+            adherent=adherent,
+            ouvrage=ouvrage,
+            date_debut=date_debut,
+            date_fin=date_fin,
+            montant_estime=montant,
+            statut=StatutReservation.EN_ATTENTE,
+        )
+        return Response(ReservationSerializer(reservation).data, status=status.HTTP_201_CREATED)
+
+    return Response({"detail": "Ouvrage disponible, reservation non necessaire."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsLecteur])
+def mes_reservations(request):
+    # Liste reservations du lecteur connecte.
+    qs = Reservation.objects.filter(adherent__user=request.user).select_related("ouvrage", "adherent__user")
+    qs = apply_ordering(qs, request, allowed_fields=["date_creation", "statut"], default="-date_creation")
+    items, meta = paginate_queryset(qs, request, default_page_size=10)
+    return Response({"results": ReservationSerializer(items, many=True).data, "pagination": meta})
 
 
 @api_view(["POST"])
 @permission_classes([IsLecteur])
 def annuler_reservation(request, reservation_id: int):
-    # Ce que ca fait: annule une reservation (lecteur).
+    # Annule une reservation (lecteur).
     try:
         reservation = Reservation.objects.get(id=reservation_id, adherent__user=request.user)
     except Reservation.DoesNotExist:
@@ -627,8 +674,8 @@ def annuler_reservation(request, reservation_id: int):
 
 @api_view(["POST"])
 @permission_classes([IsAdminOrBibliothecaire])
-def honorer_reservation(request, reservation_id: int):
-    # Ce que ca fait: honore une reservation (admin/biblio).
+def valider_reservation(request, reservation_id: int):
+    # Valide une reservation (admin/biblio).
     try:
         reservation = Reservation.objects.get(id=reservation_id)
     except Reservation.DoesNotExist:
@@ -637,7 +684,25 @@ def honorer_reservation(request, reservation_id: int):
     if reservation.statut != StatutReservation.EN_ATTENTE:
         return Response({"detail": "Reservation non modifiable."}, status=status.HTTP_400_BAD_REQUEST)
 
-    reservation.statut = StatutReservation.HONOREE
+    reservation.statut = StatutReservation.VALIDEE
+    reservation.date_traitement = timezone.now()
+    reservation.save(update_fields=["statut", "date_traitement"])
+    return Response(ReservationSerializer(reservation).data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminOrBibliothecaire])
+def refuser_reservation(request, reservation_id: int):
+    # Refuse une reservation (admin/biblio).
+    try:
+        reservation = Reservation.objects.get(id=reservation_id)
+    except Reservation.DoesNotExist:
+        return Response({"detail": "Reservation introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+    if reservation.statut != StatutReservation.EN_ATTENTE:
+        return Response({"detail": "Reservation non modifiable."}, status=status.HTTP_400_BAD_REQUEST)
+
+    reservation.statut = StatutReservation.REFUSEE
     reservation.date_traitement = timezone.now()
     reservation.save(update_fields=["statut", "date_traitement"])
     return Response(ReservationSerializer(reservation).data, status=status.HTTP_200_OK)

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
-import { formatDate } from "../../../../lib/format";
+import { formatDate, formatMoney } from "../../../../lib/format";
 
 export default function BibliothecaireReservationsPage() {
   const [reservations, setReservations] = useState<any[]>([]);
@@ -28,12 +28,21 @@ export default function BibliothecaireReservationsPage() {
     fetchReservations();
   }, []);
 
-  const handleHonorer = async (reservationId: number) => {
+  const handleValider = async (reservationId: number) => {
     try {
-      await api.post(`/api/reservations/${reservationId}/honorer/`);
+      await api.post(`/api/reservations/${reservationId}/valider/`);
       await fetchReservations();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Impossible d'honorer la réservation.");
+      setError(err?.response?.data?.detail || "Impossible de valider la réservation.");
+    }
+  };
+
+  const handleRefuser = async (reservationId: number) => {
+    try {
+      await api.post(`/api/reservations/${reservationId}/refuser/`);
+      await fetchReservations();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Impossible de refuser la réservation.");
     }
   };
 
@@ -53,7 +62,8 @@ export default function BibliothecaireReservationsPage() {
                 <th className="py-2">Lecteur</th>
                 <th className="py-2">Ouvrage</th>
                 <th className="py-2">Statut</th>
-                <th className="py-2">Date</th>
+                <th className="py-2">Période</th>
+                <th className="py-2">Montant</th>
                 <th className="py-2 text-right">Action</th>
               </tr>
             </thead>
@@ -63,22 +73,33 @@ export default function BibliothecaireReservationsPage() {
                   <td className="py-3 text-slate-700">{reservation.adherent_username}</td>
                   <td className="py-3 text-slate-600">{reservation.ouvrage_titre}</td>
                   <td className="py-3 text-slate-600">{reservation.statut}</td>
-                  <td className="py-3 text-slate-600">{formatDate(reservation.date_creation)}</td>
+                  <td className="py-3 text-slate-600">
+                    {formatDate(reservation.date_debut)} → {formatDate(reservation.date_fin)}
+                  </td>
+                  <td className="py-3 text-slate-600">{formatMoney(reservation.montant_estime)}</td>
                   <td className="py-3 text-right">
                     <button
                       type="button"
                       disabled={reservation.statut !== "EN_ATTENTE"}
-                      onClick={() => handleHonorer(reservation.id)}
+                      onClick={() => handleValider(reservation.id)}
                       className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
                     >
-                      Honorer
+                      Valider
+                    </button>
+                    <button
+                      type="button"
+                      disabled={reservation.statut !== "EN_ATTENTE"}
+                      onClick={() => handleRefuser(reservation.id)}
+                      className="ml-2 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      Refuser
                     </button>
                   </td>
                 </tr>
               ))}
               {!loading && reservations.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-sm text-slate-400">
+                  <td colSpan={6} className="py-6 text-center text-sm text-slate-400">
                     Aucune réservation.
                   </td>
                 </tr>
