@@ -276,3 +276,19 @@ def admin_user_password(request, user_id: int):
     )
 
     return Response({"detail": "Mot de passe reinitialise."}, status=status.HTTP_200_OK)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAdminOnly])
+def admin_user_delete(request, user_id: int):
+    # Suppression definitive d'un utilisateur (admin uniquement).
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"detail": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+    if user == request.user:
+        return Response({"detail": "Suppression du compte courant interdite."}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

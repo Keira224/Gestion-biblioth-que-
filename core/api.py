@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db import models
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -7,8 +8,13 @@ from rest_framework.response import Response
 from emprunts.models import Reservation, Penalite, StatutReservation
 from ouvrages.models import Ebook
 from users.views import IsAdminOrBibliothecaire
+from django.contrib.auth import get_user_model
 from .models import Paiement, StatutPaiement, TypePaiement
-from .serializers import PaiementSerializer
+from .serializers import PaiementSerializer, MessageSerializer
+from users.views import get_user_role, UserRole
+from .models import Message
+
+User = get_user_model()
 
 
 @api_view(["POST"])
@@ -70,3 +76,43 @@ def payer(request, paiement_id: int):
         Ebook.objects.filter(id=paiement.reference_objet).exists()
 
     return Response(PaiementSerializer(paiement).data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def messages(request):
+    # Messagerie simple entre lecteurs et staff.
+    if request.method == "GET":
+        role = get_user_role(request.user)
+        if role in {UserRole.ADMIN, UserRole.BIBLIOTHECAIRE}:
+            qs = Message.objects.select_related("sender", "recipient")
+        else:
+            qs = Message.objects.filter(
+                models.Q(sender=request.user) | models.Q(recipient=request.user)
+            ).select_related("sender", "recipient")
+        qs = qs.order_by("-created_at")
+        return Response(MessageSerializer(qs, many=True).data)
+
+    data = request.data
+    contenu = data.get("contenu")
+    recipient_id = data.get("recipient_id")
+
+    if not contenu:
+        return Response({"detail": "Message requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+    role = get_user_role(request.user)
+    recipient = None
+    if recipient_id:
+        recipient = User.objects.filter(id=recipient_id).first()
+        if not recipient:
+            return Response({"detail": "Destinataire introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+    if role in {UserRole.ADMIN, UserRole.BIBLIOTHECAIRE} and recipient is None:
+        return Response({"detail": "Destinataire requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+    message = Message.objects.create(
+        sender=request.user,
+        recipient=recipient,
+        contenu=contenu,
+    )
+    return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)

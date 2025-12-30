@@ -9,15 +9,28 @@ import type { UserRole } from "../lib/auth";
 export const Sidebar = ({
   role,
   onLogout,
+  isOpen,
+  onClose,
 }: {
   role: UserRole;
   onLogout: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }) => {
   const pathname = usePathname();
   const menu = menuByRole(role);
 
   return (
-    <aside className="bg-sidebar-gradient flex h-screen w-64 flex-col text-white shadow-xl">
+    <>
+      <div
+        className={`fixed inset-0 z-40 bg-slate-900/40 transition md:hidden ${isOpen ? "block" : "hidden"}`}
+        onClick={onClose}
+      />
+      <aside
+        className={`bg-sidebar-gradient fixed z-50 flex h-screen w-64 flex-col text-white shadow-xl transition md:static md:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
       <div className="px-6 pb-6 pt-8">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-xl font-bold">
           GB
@@ -57,6 +70,7 @@ export const Sidebar = ({
           Déconnexion
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };

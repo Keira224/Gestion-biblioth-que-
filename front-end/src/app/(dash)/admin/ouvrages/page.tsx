@@ -12,6 +12,8 @@ export default function AdminOuvragesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState({
     isbn: "",
     titre: "",
@@ -21,6 +23,16 @@ export default function AdminOuvragesPage() {
     categorie: "",
     type_ressource: "LIVRE",
     nombre_exemplaires: "",
+  });
+  const [editForm, setEditForm] = useState({
+    isbn: "",
+    titre: "",
+    auteur: "",
+    editeur: "",
+    annee: "",
+    categorie: "",
+    type_ressource: "LIVRE",
+    disponible: true,
   });
 
   const fetchOuvrages = async () => {
@@ -71,6 +83,54 @@ export default function AdminOuvragesPage() {
     }
   };
 
+  const openEditModal = (ouvrage: any) => {
+    setSelectedId(ouvrage.id);
+    setEditForm({
+      isbn: ouvrage.isbn,
+      titre: ouvrage.titre,
+      auteur: ouvrage.auteur,
+      editeur: ouvrage.editeur || "",
+      annee: ouvrage.annee ? String(ouvrage.annee) : "",
+      categorie: ouvrage.categorie,
+      type_ressource: ouvrage.type_ressource,
+      disponible: ouvrage.disponible,
+    });
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedId) return;
+    setError(null);
+    try {
+      await api.patch(`/api/catalogue/ouvrages/${selectedId}/`, {
+        isbn: editForm.isbn,
+        titre: editForm.titre,
+        auteur: editForm.auteur,
+        editeur: editForm.editeur || undefined,
+        annee: editForm.annee ? Number(editForm.annee) : undefined,
+        categorie: editForm.categorie,
+        type_ressource: editForm.type_ressource,
+        disponible: editForm.disponible,
+      });
+      setEditOpen(false);
+      await fetchOuvrages();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Modification impossible.");
+    }
+  };
+
+  const handleDelete = async (ouvrageId: number) => {
+    if (!confirm("Supprimer cet ouvrage ?")) return;
+    setError(null);
+    try {
+      await api.delete(`/api/catalogue/ouvrages/${ouvrageId}/`);
+      await fetchOuvrages();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Suppression impossible.");
+    }
+  };
+
   return (
     <RoleGuard allowed={["ADMIN"]}>
       <div className="space-y-6">
@@ -101,6 +161,7 @@ export default function AdminOuvragesPage() {
                 <th className="py-2">Catégorie</th>
                 <th className="py-2">Exemplaires</th>
                 <th className="py-2">Disponibles</th>
+                <th className="py-2 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -111,11 +172,27 @@ export default function AdminOuvragesPage() {
                   <td className="py-3 text-slate-600">{ouvrage.categorie}</td>
                   <td className="py-3 text-slate-600">{ouvrage.exemplaires_total}</td>
                   <td className="py-3 text-slate-600">{ouvrage.exemplaires_disponibles}</td>
+                  <td className="py-3 text-right space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(ouvrage)}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(ouvrage.id)}
+                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600"
+                    >
+                      Supprimer
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!loading && ouvrages.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-sm text-slate-400">
+                  <td colSpan={6} className="py-6 text-center text-sm text-slate-400">
                     Aucun ouvrage enregistré.
                   </td>
                 </tr>
@@ -194,9 +271,8 @@ export default function AdminOuvragesPage() {
                   className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
                 >
                   <option value="LIVRE">Livre</option>
-                  <option value="MAGAZINE">Magazine</option>
-                  <option value="THESE">Thèse</option>
-                  <option value="CD">CD</option>
+                  <option value="DVD">DVD</option>
+                  <option value="RESSOURCE_NUMERIQUE">Ressource numérique</option>
                 </select>
               </div>
               <div>
@@ -215,6 +291,104 @@ export default function AdminOuvragesPage() {
               className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Enregistrer l'ouvrage
+            </button>
+          </form>
+        </Modal>
+
+        <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Modifier un ouvrage">
+          <form className="space-y-4" onSubmit={handleUpdate}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">ISBN</label>
+                <input
+                  value={editForm.isbn}
+                  onChange={(event) => setEditForm({ ...editForm, isbn: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Titre</label>
+                <input
+                  value={editForm.titre}
+                  onChange={(event) => setEditForm({ ...editForm, titre: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Auteur</label>
+                <input
+                  value={editForm.auteur}
+                  onChange={(event) => setEditForm({ ...editForm, auteur: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Éditeur</label>
+                <input
+                  value={editForm.editeur}
+                  onChange={(event) => setEditForm({ ...editForm, editeur: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Année</label>
+                <input
+                  type="number"
+                  value={editForm.annee}
+                  onChange={(event) => setEditForm({ ...editForm, annee: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Catégorie</label>
+                <input
+                  value={editForm.categorie}
+                  onChange={(event) => setEditForm({ ...editForm, categorie: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Type ressource</label>
+                <select
+                  value={editForm.type_ressource}
+                  onChange={(event) => setEditForm({ ...editForm, type_ressource: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="LIVRE">Livre</option>
+                  <option value="DVD">DVD</option>
+                  <option value="RESSOURCE_NUMERIQUE">Ressource numérique</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Disponible</label>
+                <select
+                  value={editForm.disponible ? "true" : "false"}
+                  onChange={(event) =>
+                    setEditForm({ ...editForm, disponible: event.target.value === "true" })
+                  }
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="true">Oui</option>
+                  <option value="false">Non</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Mettre à jour
             </button>
           </form>
         </Modal>

@@ -2,7 +2,13 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .views import admin_user_detail, admin_user_password, admin_users, me
+from .views import (
+    admin_user_detail,
+    admin_user_password,
+    admin_user_delete,
+    admin_users,
+    me,
+)
 
 urlpatterns = [
     path("api/auth/me/", me),
@@ -10,5 +16,6 @@ urlpatterns = [
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/admin/users/", admin_users),
     path("api/admin/users/<int:user_id>/", admin_user_detail),
+    path("api/admin/users/<int:user_id>/delete/", admin_user_delete),
     path("api/admin/users/<int:user_id>/password/", admin_user_password),
 ]

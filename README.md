@@ -18,6 +18,7 @@
 - Demandes de livres : `ouvrages_demandelivre`
 - E-books : `ouvrages_ebook`
 - Paiements : `core_paiement`
+- Messages : `core_message`
 
 ### 3) Requêtes SSMS utiles
 

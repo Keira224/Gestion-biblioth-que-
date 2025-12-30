@@ -1,15 +1,30 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 import { useState } from "react";
 import type { UserProfile } from "../lib/auth";
 
-export const Topbar = ({ title, user }: { title: string; user: UserProfile }) => {
+export const Topbar = ({
+  title,
+  user,
+  onMenuToggle,
+}: {
+  title: string;
+  user: UserProfile;
+  onMenuToggle?: () => void;
+}) => {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="flex items-center justify-between border-b border-slate-200 bg-white px-8 py-4">
-      <div>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onMenuToggle}
+          className="rounded-lg border border-slate-200 p-2 text-slate-500 md:hidden"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
         <h2 className="text-xl font-semibold text-slate-800">{title}</h2>
         <p className="text-xs text-slate-500">Suivi en temps réel des opérations</p>
       </div>
