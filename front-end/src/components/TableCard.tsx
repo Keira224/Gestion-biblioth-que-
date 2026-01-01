@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 export const TableCard = ({
   title,
   action,
+  helper,
   children,
 }: {
   title: string;
   action?: ReactNode;
+  helper?: ReactNode;
   children: ReactNode;
 }) => {
   return (
@@ -15,6 +17,7 @@ export const TableCard = ({
         <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
         {action}
       </div>
+      {helper && <div className="mb-4">{helper}</div>}
       <div className="overflow-x-auto">{children}</div>
     </div>
   );

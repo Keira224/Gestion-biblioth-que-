@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, SearchX } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
 import { Modal } from "../../../../components/Modal";
+import { formatApiError } from "../../../../lib/format";
 
 export default function BibliothecaireExemplairesPage() {
   const [ouvrages, setOuvrages] = useState<any[]>([]);
@@ -43,7 +44,7 @@ export default function BibliothecaireExemplairesPage() {
       setExemplaires(response.data.results || []);
       setPagination(response.data.pagination || { page: 1, pages: 1 });
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Impossible de charger les exemplaires.");
+      setError(formatApiError(err, "Impossible de charger les exemplaires."));
     } finally {
       setLoading(false);
     }
@@ -72,9 +73,11 @@ export default function BibliothecaireExemplairesPage() {
       setNombre("1");
       await fetchExemplaires(selectedOuvrage, pagination.page);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Ajout impossible.");
+      setError(formatApiError(err, "Ajout impossible."));
     }
   };
+
+  const hasFilters = Boolean(search || etatFilter);
 
   return (
     <RoleGuard allowed={["BIBLIOTHECAIRE"]}>
@@ -110,7 +113,45 @@ export default function BibliothecaireExemplairesPage() {
           </button>
         </div>
 
-        <TableCard title="Liste des exemplaires">
+        <TableCard
+          title="Liste des exemplaires"
+          helper={
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <div className="space-y-1">
+                <p className="font-semibold text-slate-700">Actions intelligentes</p>
+                {hasFilters ? (
+                  <p>Filtres actifs : retirez-les pour revoir tous les exemplaires.</p>
+                ) : (
+                  <p>Astuce : recherchez un code-barres ou filtrez par état.</p>
+                )}
+                <p className="text-xs font-semibold text-amber-600">
+                  Avertissement : supprimer un exemplaire le retire du stock.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hasFilters && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch("");
+                      setEtatFilter("");
+                    }}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                  >
+                    Réinitialiser les filtres
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOpen(true)}
+                  className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
+                >
+                  Ajouter des exemplaires
+                </button>
+              </div>
+            </div>
+          }
+        >
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <input
               value={search}
@@ -151,12 +192,17 @@ export default function BibliothecaireExemplairesPage() {
                       onClick={async () => {
                         setError(null);
                         try {
+                          const confirmed = confirm(
+                            `Vous supprimez l'exemplaire ${exemplaire.code_barre} (${exemplaire.ouvrage_titre}). Continuer ?`,
+                          );
+                          if (!confirmed) return;
                           await api.delete(`/api/catalogue/exemplaires/${exemplaire.id}/`);
                           await fetchExemplaires(selectedOuvrage, pagination.page);
                         } catch (err: any) {
-                          setError(err?.response?.data?.detail || "Suppression impossible.");
+                          setError(formatApiError(err, "Suppression impossible."));
                         }
                       }}
+                      title="Supprimer cet exemplaire"
                       className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600"
                     >
                       Supprimer
@@ -166,8 +212,35 @@ export default function BibliothecaireExemplairesPage() {
               ))}
               {!loading && exemplaires.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-sm text-slate-400">
-                    Aucun exemplaire disponible.
+                  <td colSpan={5} className="py-10 text-center">
+                    <div className="flex flex-col items-center gap-3 text-sm text-slate-500">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                        <SearchX className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">Aucun résultat</p>
+                        <p>Essayez un autre filtre ou ajoutez de nouveaux exemplaires.</p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearch("");
+                            setEtatFilter("");
+                          }}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                        >
+                          Réinitialiser les filtres
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOpen(true)}
+                          className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
+                        >
+                          Ajouter des exemplaires
+                        </button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               )}

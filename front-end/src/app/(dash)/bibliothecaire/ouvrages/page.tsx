@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, SearchX } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
 import { Modal } from "../../../../components/Modal";
+import { formatApiError } from "../../../../lib/format";
 
 export default function BibliothecaireOuvragesPage() {
   const [ouvrages, setOuvrages] = useState<any[]>([]);
@@ -53,7 +54,7 @@ export default function BibliothecaireOuvragesPage() {
         setOuvrages(response.data.results || []);
         setPagination(response.data.pagination || { page: 1, pages: 1 });
       } catch (err: any) {
-        setError(err?.response?.data?.detail || "Impossible de charger le catalogue.");
+        setError(formatApiError(err, "Impossible de charger le catalogue."));
       } finally {
         setLoading(false);
       }
@@ -92,7 +93,7 @@ export default function BibliothecaireOuvragesPage() {
       });
       setOuvrages(response.data.results || []);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Création impossible.");
+      setError(formatApiError(err, "Création impossible."));
     }
   };
 
@@ -121,7 +122,7 @@ export default function BibliothecaireOuvragesPage() {
         titre: editForm.titre,
         auteur: editForm.auteur,
         editeur: editForm.editeur || undefined,
-        annee: editForm.annee ? Number(editForm.annee) : undefined,
+        annee: editForm.annee ? Number(form.annee) : undefined,
         categorie: editForm.categorie,
         type_ressource: editForm.type_ressource,
         disponible: editForm.disponible,
@@ -132,23 +133,28 @@ export default function BibliothecaireOuvragesPage() {
       });
       setOuvrages(response.data.results || []);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Modification impossible.");
+      setError(formatApiError(err, "Modification impossible."));
     }
   };
 
-  const handleDelete = async (ouvrageId: number) => {
-    if (!confirm("Supprimer cet ouvrage ?")) return;
+  const handleDelete = async (ouvrage: any) => {
+    const confirmed = confirm(
+      `Vous supprimez l'ouvrage "${ouvrage.titre}" (exemplaires disponibles : ${ouvrage.exemplaires_disponibles}). Continuer ?`,
+    );
+    if (!confirmed) return;
     setError(null);
     try {
-      await api.delete(`/api/catalogue/ouvrages/${ouvrageId}/`);
+      await api.delete(`/api/catalogue/ouvrages/${ouvrage.id}/`);
       const response = await api.get("/api/catalogue/ouvrages/", {
         params: { page: pagination.page, search: search || undefined, type_ressource: typeFilter || undefined },
       });
       setOuvrages(response.data.results || []);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Suppression impossible.");
+      setError(formatApiError(err, "Suppression impossible."));
     }
   };
+
+  const hasFilters = Boolean(search || typeFilter);
 
   return (
     <RoleGuard allowed={["BIBLIOTHECAIRE"]}>
@@ -170,6 +176,42 @@ export default function BibliothecaireOuvragesPage() {
               <Plus className="h-4 w-4" />
               Ajouter un ouvrage
             </button>
+          }
+          helper={
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <div className="space-y-1">
+                <p className="font-semibold text-slate-700">Actions intelligentes</p>
+                {hasFilters ? (
+                  <p>Filtres actifs : effacez-les pour revoir tout le catalogue.</p>
+                ) : (
+                  <p>Astuce : utilisez le filtre par type pour accélérer la recherche.</p>
+                )}
+                <p className="text-xs font-semibold text-amber-600">
+                  Avertissement : la suppression supprime aussi les exemplaires liés.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hasFilters && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch("");
+                      setTypeFilter("");
+                    }}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                  >
+                    Réinitialiser les filtres
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOpen(true)}
+                  className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
+                >
+                  Ajouter un ouvrage
+                </button>
+              </div>
+            </div>
           }
         >
           <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -217,7 +259,8 @@ export default function BibliothecaireOuvragesPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(ouvrage.id)}
+                      onClick={() => handleDelete(ouvrage)}
+                      title="Supprimer cet ouvrage"
                       className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600"
                     >
                       Supprimer
@@ -227,8 +270,35 @@ export default function BibliothecaireOuvragesPage() {
               ))}
               {!loading && ouvrages.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-sm text-slate-400">
-                    Aucun ouvrage.
+                  <td colSpan={5} className="py-10 text-center">
+                    <div className="flex flex-col items-center gap-3 text-sm text-slate-500">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                        <SearchX className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">Aucun résultat</p>
+                        <p>Modifiez votre recherche ou ajoutez un nouvel ouvrage.</p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearch("");
+                            setTypeFilter("");
+                          }}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                        >
+                          Réinitialiser les filtres
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOpen(true)}
+                          className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
+                        >
+                          Ajouter un ouvrage
+                        </button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               )}
