@@ -119,6 +119,11 @@ export default function LecteurCataloguePage() {
     selected?.type_ressource || selected?.type || selected?.format || selected?.type_document;
   const selectedTypeLabel = selectedType ? typeLabels[selectedType] ?? selectedType : "Non renseigné";
   const selectedCategory = selected?.categorie || "Non renseignée";
+  const selectedDisponibilite = selected
+    ? (selected.exemplaires_disponibles || 0) > 0
+      ? `${selected.exemplaires_disponibles} disponible${selected.exemplaires_disponibles > 1 ? "s" : ""}`
+      : "Indisponible"
+    : "Statut inconnu";
 
   return (
     <RoleGuard allowed={["LECTEUR"]}>
@@ -220,7 +225,8 @@ export default function LecteurCataloguePage() {
               ))}
             {!loading &&
               filteredOuvrages.map((ouvrage) => {
-                const type = ouvrage.type_ressource || ouvrage.type || ouvrage.format || ouvrage.type_document || "Ouvrage";
+                const type =
+                  ouvrage.type_ressource || ouvrage.type || ouvrage.format || ouvrage.type_document || "Ouvrage";
                 const resume =
                   ouvrage.resume ||
                   ouvrage.description ||
@@ -299,8 +305,11 @@ export default function LecteurCataloguePage() {
           )}
         </TableCard>
 
-        <Modal open={open} onClose={() => setOpen(false)} title="Réserver un ouvrage">
-          <div className="rounded-xl bg-slate-50 px-4 py-3">
+        <Modal
+          open={open}
+          onClose={() => setOpen(false)}
+          title="Réserver un ouvrage"
+          header={
             <div className="flex flex-wrap items-center gap-4">
               <div className="h-16 w-16 overflow-hidden rounded-xl bg-white">
                 {selectedThumbnail ? (
@@ -320,12 +329,16 @@ export default function LecteurCataloguePage() {
                 <p className="text-sm font-semibold text-slate-700">{selected?.titre || "Ouvrage"}</p>
                 <p className="text-xs text-slate-500">{selected?.auteur || "Auteur non renseigné"}</p>
                 <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
-                  <span className="rounded-full bg-white px-3 py-1">Catégorie : {selectedCategory}</span>
-                  <span className="rounded-full bg-white px-3 py-1">Type : {selectedTypeLabel}</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1">Catégorie : {selectedCategory}</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1">Type : {selectedTypeLabel}</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1">Statut : {selectedDisponibilite}</span>
                 </div>
               </div>
             </div>
-            <p className="mt-3 text-sm text-slate-600">
+          }
+        >
+          <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+            <p className="text-sm text-slate-600">
               {selectedDescription || "Aucune description disponible pour cet ouvrage."}
             </p>
           </div>
