@@ -22,6 +22,8 @@ class OuvrageSerializer(serializers.ModelSerializer):
             "categorie",
             "type_ressource",
             "disponible",
+            "image",
+            "description_courte",
             "exemplaires_total",
             "exemplaires_disponibles",
         ]
@@ -42,6 +44,8 @@ class OuvrageCreateSerializer(serializers.ModelSerializer):
             "categorie",
             "type_ressource",
             "disponible",
+            "image",
+            "description_courte",
             "nombre_exemplaires",
         ]
 
@@ -50,7 +54,18 @@ class OuvrageUpdateSerializer(serializers.ModelSerializer):
     # Input update ouvrage.
     class Meta:
         model = Ouvrage
-        fields = ["isbn", "titre", "auteur", "editeur", "annee", "categorie", "type_ressource", "disponible"]
+        fields = [
+            "isbn",
+            "titre",
+            "auteur",
+            "editeur",
+            "annee",
+            "categorie",
+            "type_ressource",
+            "disponible",
+            "image",
+            "description_courte",
+        ]
 
 
 class DemandeLivreSerializer(serializers.ModelSerializer):
@@ -120,6 +135,31 @@ class EbookCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         fichier = attrs.get("fichier")
         url = attrs.get("url_fichier")
+        if not fichier and not url:
+            raise serializers.ValidationError("Fichier ou URL requis.")
+        if attrs.get("est_payant") and not attrs.get("prix"):
+            raise serializers.ValidationError("Prix requis pour un e-book payant.")
+        return attrs
+
+
+class EbookUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ebook
+        fields = [
+            "ouvrage",
+            "format",
+            "taille",
+            "nom_fichier",
+            "est_payant",
+            "prix",
+            "url_fichier",
+            "fichier",
+        ]
+
+    def validate(self, attrs):
+        instance = getattr(self, "instance", None)
+        fichier = attrs.get("fichier") or (instance.fichier if instance else None)
+        url = attrs.get("url_fichier") or (instance.url_fichier if instance else None)
         if not fichier and not url:
             raise serializers.ValidationError("Fichier ou URL requis.")
         if attrs.get("est_payant") and not attrs.get("prix"):

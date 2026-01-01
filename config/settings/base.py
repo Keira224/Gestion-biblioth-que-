@@ -105,6 +105,10 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> codex-verify
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
@@ -126,7 +130,10 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_HSTS_SECONDS", "31536000"))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+<<<<<<< HEAD
 
+=======
+>>>>>>> codex-verify
 
 LOGGING = {
     "version": 1,

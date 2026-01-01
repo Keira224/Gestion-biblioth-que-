@@ -12,11 +12,13 @@ urlpatterns = [
     path('', include('exemplaires.urls')),
     path('', include('ouvrages.urls')),
     path('', include('core.urls')),
-    
 ]
 
+<<<<<<< HEAD
 # Pour Activer l’accès aux fichiers PDF en local
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+=======
+>>>>>>> codex-verify
 if settings.DEBUG:
     # Pour Activer l’accès aux fichiers PDF en local
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

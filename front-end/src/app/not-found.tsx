@@ -18,4 +18,8 @@ export default function NotFound() {
       </Link>
     </main>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> codex-verify

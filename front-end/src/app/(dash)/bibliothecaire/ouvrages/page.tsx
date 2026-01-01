@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+<<<<<<< HEAD
 import { Plus, SearchX } from "lucide-react";
+=======
+import { BookOpen, Plus } from "lucide-react";
+>>>>>>> codex-verify
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
@@ -27,6 +31,7 @@ export default function BibliothecaireOuvragesPage() {
     categorie: "",
     type_ressource: "LIVRE",
     nombre_exemplaires: "",
+    description_courte: "",
   });
   const [editForm, setEditForm] = useState({
     isbn: "",
@@ -37,7 +42,10 @@ export default function BibliothecaireOuvragesPage() {
     categorie: "",
     type_ressource: "LIVRE",
     disponible: true,
+    description_courte: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchOuvrages = async (page = 1) => {
@@ -67,15 +75,20 @@ export default function BibliothecaireOuvragesPage() {
     event.preventDefault();
     setError(null);
     try {
-      await api.post("/api/catalogue/ouvrages/", {
-        isbn: form.isbn,
-        titre: form.titre,
-        auteur: form.auteur,
-        editeur: form.editeur || undefined,
-        annee: form.annee ? Number(form.annee) : undefined,
-        categorie: form.categorie,
-        type_ressource: form.type_ressource,
-        nombre_exemplaires: form.nombre_exemplaires ? Number(form.nombre_exemplaires) : 0,
+      const payload = new FormData();
+      payload.append("isbn", form.isbn);
+      payload.append("titre", form.titre);
+      payload.append("auteur", form.auteur);
+      if (form.editeur) payload.append("editeur", form.editeur);
+      if (form.annee) payload.append("annee", String(Number(form.annee)));
+      payload.append("categorie", form.categorie);
+      payload.append("type_ressource", form.type_ressource);
+      payload.append("nombre_exemplaires", String(form.nombre_exemplaires ? Number(form.nombre_exemplaires) : 0));
+      if (form.description_courte) payload.append("description_courte", form.description_courte);
+      if (imageFile) payload.append("image", imageFile);
+
+      await api.post("/api/catalogue/ouvrages/", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       setOpen(false);
       setForm({
@@ -87,7 +100,9 @@ export default function BibliothecaireOuvragesPage() {
         categorie: "",
         type_ressource: "LIVRE",
         nombre_exemplaires: "",
+        description_courte: "",
       });
+      setImageFile(null);
       const response = await api.get("/api/catalogue/ouvrages/", {
         params: { page: pagination.page, search: search || undefined, type_ressource: typeFilter || undefined },
       });
@@ -108,7 +123,9 @@ export default function BibliothecaireOuvragesPage() {
       categorie: ouvrage.categorie,
       type_ressource: ouvrage.type_ressource,
       disponible: ouvrage.disponible,
+      description_courte: ouvrage.description_courte || "",
     });
+    setEditImageFile(null);
     setEditOpen(true);
   };
 
@@ -117,6 +134,7 @@ export default function BibliothecaireOuvragesPage() {
     if (!selectedId) return;
     setError(null);
     try {
+<<<<<<< HEAD
       await api.patch(`/api/catalogue/ouvrages/${selectedId}/`, {
         isbn: editForm.isbn,
         titre: editForm.titre,
@@ -126,6 +144,22 @@ export default function BibliothecaireOuvragesPage() {
         categorie: editForm.categorie,
         type_ressource: editForm.type_ressource,
         disponible: editForm.disponible,
+=======
+      const payload = new FormData();
+      payload.append("isbn", editForm.isbn);
+      payload.append("titre", editForm.titre);
+      payload.append("auteur", editForm.auteur);
+      if (editForm.editeur) payload.append("editeur", editForm.editeur);
+      if (editForm.annee) payload.append("annee", String(Number(editForm.annee)));
+      payload.append("categorie", editForm.categorie);
+      payload.append("type_ressource", editForm.type_ressource);
+      payload.append("disponible", String(editForm.disponible));
+      if (editForm.description_courte) payload.append("description_courte", editForm.description_courte);
+      if (editImageFile) payload.append("image", editImageFile);
+
+      await api.patch(`/api/catalogue/ouvrages/${selectedId}/`, payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+>>>>>>> codex-verify
       });
       setEditOpen(false);
       const response = await api.get("/api/catalogue/ouvrages/", {
@@ -235,6 +269,7 @@ export default function BibliothecaireOuvragesPage() {
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase text-slate-400">
               <tr>
+                <th className="py-2">Aperçu</th>
                 <th className="py-2">Titre</th>
                 <th className="py-2">Auteur</th>
                 <th className="py-2">ISBN</th>
@@ -245,6 +280,24 @@ export default function BibliothecaireOuvragesPage() {
             <tbody>
               {ouvrages.map((ouvrage) => (
                 <tr key={ouvrage.id} className="border-t border-slate-100">
+                  <td className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-9 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-slate-400">
+                        {ouvrage.image ? (
+                          <img src={ouvrage.image} alt={ouvrage.titre} className="h-full w-full object-cover" />
+                        ) : (
+                          <BookOpen className="h-4 w-4" />
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {ouvrage.description_courte
+                          ? ouvrage.description_courte.length > 60
+                            ? `${ouvrage.description_courte.slice(0, 60)}...`
+                            : ouvrage.description_courte
+                          : "Aucune description"}
+                      </div>
+                    </div>
+                  </td>
                   <td className="py-3 text-slate-700">{ouvrage.titre}</td>
                   <td className="py-3 text-slate-600">{ouvrage.auteur}</td>
                   <td className="py-3 text-slate-600">{ouvrage.isbn}</td>
@@ -270,6 +323,7 @@ export default function BibliothecaireOuvragesPage() {
               ))}
               {!loading && ouvrages.length === 0 && (
                 <tr>
+<<<<<<< HEAD
                   <td colSpan={5} className="py-10 text-center">
                     <div className="flex flex-col items-center gap-3 text-sm text-slate-500">
                       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
@@ -299,6 +353,10 @@ export default function BibliothecaireOuvragesPage() {
                         </button>
                       </div>
                     </div>
+=======
+                  <td colSpan={6} className="py-6 text-center text-sm text-slate-400">
+                    Aucun ouvrage.
+>>>>>>> codex-verify
                   </td>
                 </tr>
               )}
@@ -437,6 +495,24 @@ export default function BibliothecaireOuvragesPage() {
                 />
               </div>
             </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Description courte</label>
+              <textarea
+                value={form.description_courte}
+                onChange={(event) => setForm({ ...form, description_courte: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Image de couverture</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => setImageFile(event.target.files?.[0] || null)}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
 
             <button
               type="submit"
@@ -534,6 +610,24 @@ export default function BibliothecaireOuvragesPage() {
                   <option value="false">Non</option>
                 </select>
               </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Description courte</label>
+              <textarea
+                value={editForm.description_courte}
+                onChange={(event) => setEditForm({ ...editForm, description_courte: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Image de couverture</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => setEditImageFile(event.target.files?.[0] || null)}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
             </div>
 
             <button

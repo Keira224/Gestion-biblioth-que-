@@ -31,7 +31,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
+<<<<<<< HEAD
     ".next/types/**/*.ts",
+=======
+>>>>>>> codex-verify
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [

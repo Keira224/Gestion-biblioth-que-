@@ -24,6 +24,7 @@ from .serializers import (
     DemandeLivreStatusSerializer,
     EbookSerializer,
     EbookCreateSerializer,
+    EbookUpdateSerializer,
 )
 
 
@@ -40,6 +41,7 @@ def annotate_ouvrages(qs):
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
 def ouvrages_list(request):
     # Ce que ca fait: liste ou creation d'ouvrages.
     # Permissions: GET auth, POST admin/biblio.
@@ -129,6 +131,7 @@ def ouvrages_list(request):
 
 @api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
 def ouvrage_detail(request, ouvrage_id: int):
     # Ce que ca fait: detail / update / delete d'un ouvrage.
     # Permissions: GET auth, PATCH/DELETE admin/biblio.
@@ -301,3 +304,28 @@ def ebook_download(request, ebook_id: int):
         return Response({"url": ebook.url_fichier})
 
     return Response({"detail": "Aucun fichier disponible."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET", "PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def ebook_detail(request, ebook_id: int):
+    try:
+        ebook = Ebook.objects.get(id=ebook_id)
+    except Ebook.DoesNotExist:
+        return Response({"detail": "Ebook introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        return Response(EbookSerializer(ebook).data)
+
+    if not IsAdminOrBibliothecaire().has_permission(request, None):
+        return Response({"detail": "Acces interdit."}, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == "PATCH":
+        serializer = EbookUpdateSerializer(instance=ebook, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(EbookSerializer(ebook).data, status=status.HTTP_200_OK)
+
+    ebook.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
