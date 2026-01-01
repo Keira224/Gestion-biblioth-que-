@@ -2,6 +2,7 @@
 
 import { ChevronDown, Menu } from "lucide-react";
 import { useState } from "react";
+
 import type { UserProfile } from "../lib/auth";
 
 export const Topbar = ({
