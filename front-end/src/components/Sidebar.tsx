@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { menuByRole } from "../lib/navigation";
+import { menuByRole, quickActionsByRole } from "../lib/navigation";
 import type { UserRole } from "../lib/auth";
 
 export const Sidebar = ({
@@ -19,6 +19,7 @@ export const Sidebar = ({
 }) => {
   const pathname = usePathname();
   const menu = menuByRole(role);
+  const quickActions = quickActionsByRole(role);
 
   return (
     <>
@@ -41,7 +42,9 @@ export const Sidebar = ({
         </p>
       </div>
 
-      <nav className="flex-1 space-y-1 px-4">
+      <nav className="flex-1 space-y-6 px-4">
+        <div className="space-y-1">
+          <p className="px-2 text-xs font-semibold uppercase tracking-wide text-white/60">Navigation</p>
         {menu.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;
@@ -58,6 +61,26 @@ export const Sidebar = ({
             </Link>
           );
         })}
+        </div>
+
+        <div className="space-y-2 rounded-xl border border-white/10 bg-white/10 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/70">Actions rapides</p>
+          <div className="space-y-2">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/20"
+                >
+                  <Icon className="h-4 w-4" />
+                  {action.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
       <div className="px-6 pb-6 pt-4">

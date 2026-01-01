@@ -9,6 +9,7 @@ from .views import (
     demande_livre_status,
     ebooks,
     ebook_download,
+    ebook_detail,
 )
 
 urlpatterns = [
@@ -18,5 +19,6 @@ urlpatterns = [
     path("api/demandes-livres/me/", mes_demandes_livres),
     path("api/demandes-livres/<int:demande_id>/status/", demande_livre_status),
     path("api/ebooks/", ebooks),
+    path("api/ebooks/<int:ebook_id>/", ebook_detail),
     path("api/ebooks/<int:ebook_id>/download/", ebook_download),
 ]

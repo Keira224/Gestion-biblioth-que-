@@ -27,8 +27,8 @@ urlpatterns = [
     path('', include('exemplaires.urls')),
     path('', include('ouvrages.urls')),
     path('', include('core.urls')),
-    
 ]
 
-# Pour Activer l’accès aux fichiers PDF en local
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    # Pour Activer l’accès aux fichiers PDF en local
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

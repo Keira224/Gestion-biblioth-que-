@@ -42,6 +42,15 @@ class Ouvrage(models.Model):
     disponible = models.BooleanField(
         default=True
     )
+    image = models.ImageField(
+        upload_to="ouvrages/",
+        blank=True,
+        null=True,
+    )
+    description_courte = models.TextField(
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return f"{self.titre} ({self.isbn})"

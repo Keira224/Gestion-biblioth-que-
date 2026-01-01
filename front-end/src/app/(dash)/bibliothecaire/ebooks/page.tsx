@@ -16,6 +16,8 @@ export default function BibliothecaireEbooksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState({
     ouvrage: "",
     format: "PDF",
@@ -25,7 +27,17 @@ export default function BibliothecaireEbooksPage() {
     prix: "",
     url_fichier: "",
   });
+  const [editForm, setEditForm] = useState({
+    ouvrage: "",
+    format: "PDF",
+    taille: "",
+    nom_fichier: "",
+    est_payant: false,
+    prix: "",
+    url_fichier: "",
+  });
   const [file, setFile] = useState<File | null>(null);
+  const [editFile, setEditFile] = useState<File | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -90,6 +102,57 @@ export default function BibliothecaireEbooksPage() {
     }
   };
 
+  const openEditModal = (ebook: any) => {
+    setSelectedId(ebook.id);
+    setEditForm({
+      ouvrage: ebook.ouvrage ? String(ebook.ouvrage) : "",
+      format: ebook.format || "PDF",
+      taille: ebook.taille ? String(ebook.taille) : "",
+      nom_fichier: ebook.nom_fichier || "",
+      est_payant: Boolean(ebook.est_payant),
+      prix: ebook.prix ? String(ebook.prix) : "",
+      url_fichier: ebook.url_fichier || "",
+    });
+    setEditFile(null);
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedId) return;
+    setError(null);
+    try {
+      const payload = new FormData();
+      if (editForm.ouvrage) payload.append("ouvrage", editForm.ouvrage);
+      payload.append("format", editForm.format);
+      if (editForm.taille) payload.append("taille", editForm.taille);
+      payload.append("nom_fichier", editForm.nom_fichier);
+      payload.append("est_payant", String(editForm.est_payant));
+      if (editForm.est_payant && editForm.prix) payload.append("prix", editForm.prix);
+      if (editForm.url_fichier) payload.append("url_fichier", editForm.url_fichier);
+      if (editFile) payload.append("fichier", editFile);
+
+      await api.patch(`/api/ebooks/${selectedId}/`, payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setEditOpen(false);
+      await fetchData();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Modification impossible.");
+    }
+  };
+
+  const handleDelete = async (ebookId: number) => {
+    if (!confirm("Supprimer cet e-book ?")) return;
+    setError(null);
+    try {
+      await api.delete(`/api/ebooks/${ebookId}/`);
+      await fetchData();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Suppression impossible.");
+    }
+  };
+
   return (
     <RoleGuard allowed={["BIBLIOTHECAIRE"]}>
       <div className="space-y-6">
@@ -142,6 +205,7 @@ export default function BibliothecaireEbooksPage() {
                 <th className="py-2">Format</th>
                 <th className="py-2">Ouvrage</th>
                 <th className="py-2">Payant</th>
+                <th className="py-2 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -151,11 +215,27 @@ export default function BibliothecaireEbooksPage() {
                   <td className="py-3 text-slate-600">{ebook.format}</td>
                   <td className="py-3 text-slate-600">{ebook.ouvrage_titre || "-"}</td>
                   <td className="py-3 text-slate-600">{ebook.est_payant ? "Oui" : "Non"}</td>
+                  <td className="py-3 text-right space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(ebook)}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(ebook.id)}
+                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600"
+                    >
+                      Supprimer
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!loading && ebooks.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-sm text-slate-400">
+                  <td colSpan={5} className="py-6 text-center text-sm text-slate-400">
                     Aucun e-book.
                   </td>
                 </tr>
@@ -276,6 +356,99 @@ export default function BibliothecaireEbooksPage() {
               className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Ajouter
+            </button>
+          </form>
+        </Modal>
+
+        <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Modifier un e-book">
+          <form className="space-y-4" onSubmit={handleUpdate}>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Nom du fichier</label>
+              <input
+                value={editForm.nom_fichier}
+                onChange={(event) => setEditForm({ ...editForm, nom_fichier: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                required
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Format</label>
+                <select
+                  value={editForm.format}
+                  onChange={(event) => setEditForm({ ...editForm, format: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="PDF">PDF</option>
+                  <option value="EPUB">EPUB</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Taille (Ko)</label>
+                <input
+                  type="number"
+                  value={editForm.taille}
+                  onChange={(event) => setEditForm({ ...editForm, taille: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Lien du fichier</label>
+              <input
+                value={editForm.url_fichier}
+                onChange={(event) => setEditForm({ ...editForm, url_fichier: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Fichier e-book</label>
+              <input
+                type="file"
+                onChange={(event) => setEditFile(event.target.files?.[0] || null)}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500">Ouvrage associé</label>
+              <select
+                value={editForm.ouvrage}
+                onChange={(event) => setEditForm({ ...editForm, ouvrage: event.target.value })}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              >
+                <option value="">Aucun</option>
+                {ouvrages.map((ouvrage) => (
+                  <option key={ouvrage.id} value={ouvrage.id}>
+                    {ouvrage.titre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={editForm.est_payant}
+                onChange={(event) => setEditForm({ ...editForm, est_payant: event.target.checked })}
+              />
+              <span className="text-sm text-slate-600">E-book payant</span>
+            </div>
+            {editForm.est_payant && (
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Prix (GNF)</label>
+                <input
+                  type="number"
+                  value={editForm.prix}
+                  onChange={(event) => setEditForm({ ...editForm, prix: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+            )}
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Mettre à jour
             </button>
           </form>
         </Modal>

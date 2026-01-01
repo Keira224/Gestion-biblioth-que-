@@ -22,6 +22,17 @@ export type MenuItem = {
   icon: LucideIcon;
 };
 
+export type QuickAction = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+};
+
+export type BreadcrumbItem = {
+  label: string;
+  href?: string;
+};
+
 export const adminMenu: MenuItem[] = [
   { label: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
   { label: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
@@ -68,6 +79,50 @@ export const menuByRole = (role: UserRole | null | undefined) => {
   if (role === "ADMIN") return adminMenu;
   if (role === "BIBLIOTHECAIRE") return bibliothecaireMenu;
   return lecteurMenu;
+};
+
+export const quickActionsByRole = (role: UserRole) => {
+  if (role === "ADMIN") {
+    return [
+      { label: "Créer un utilisateur", href: "/admin/utilisateurs", icon: Users },
+      { label: "Ajouter un ouvrage", href: "/admin/ouvrages", icon: BookOpen },
+      { label: "Voir les retards", href: "/admin/retards", icon: AlertTriangle },
+    ] satisfies QuickAction[];
+  }
+  if (role === "BIBLIOTHECAIRE") {
+    return [
+      { label: "Créer un emprunt", href: "/bibliothecaire/emprunts", icon: ClipboardList },
+      { label: "Enregistrer un retour", href: "/bibliothecaire/retours", icon: FileText },
+      { label: "Gérer les réservations", href: "/bibliothecaire/reservations", icon: Layers },
+    ] satisfies QuickAction[];
+  }
+  return [
+    { label: "Consulter le catalogue", href: "/lecteur/catalogue", icon: BookOpen },
+    { label: "Mes emprunts", href: "/lecteur/mes-emprunts", icon: ClipboardList },
+    { label: "Écrire un message", href: "/lecteur/messages", icon: MessageSquare },
+  ] satisfies QuickAction[];
+};
+
+export const getSupportLink = (role: UserRole) => {
+  if (role === "ADMIN") return "/admin/messages";
+  if (role === "BIBLIOTHECAIRE") return "/bibliothecaire/messages";
+  return "/lecteur/messages";
+};
+
+export const getBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return [];
+
+  const base = segments[0];
+  const root =
+    base === "admin"
+      ? { label: "Admin", href: "/admin" }
+      : base === "bibliothecaire"
+        ? { label: "Bibliothécaire", href: "/bibliothecaire" }
+        : { label: "Lecteur", href: "/lecteur" };
+
+  const title = getPageTitle(pathname);
+  return [root, { label: title }];
 };
 
 export const getPageTitle = (pathname: string) => {
