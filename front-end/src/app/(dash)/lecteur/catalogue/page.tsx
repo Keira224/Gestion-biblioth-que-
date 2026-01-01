@@ -19,6 +19,11 @@ export default function LecteurCataloguePage() {
   const [availabilityFilter, setAvailabilityFilter] = useState("Toutes");
   const [typeFilter, setTypeFilter] = useState("Tous");
   const [sortBy, setSortBy] = useState("titre");
+  const typeLabels: Record<string, string> = {
+    LIVRE: "Livre",
+    DVD: "DVD",
+    RESSOURCE_NUMERIQUE: "Ressource numérique",
+  };
 
   useEffect(() => {
     const fetchCatalogue = async () => {
@@ -55,21 +60,13 @@ export default function LecteurCataloguePage() {
     }
   };
 
-  const categories = Array.from(
-    new Set(ouvrages.map((ouvrage) => ouvrage.categorie).filter(Boolean))
-  );
+  const categories = Array.from(new Set(ouvrages.map((ouvrage) => ouvrage.categorie).filter(Boolean)));
   const types = Array.from(
     new Set(
       ouvrages
-        .map(
-          (ouvrage) =>
-            ouvrage.type_ressource ||
-            ouvrage.type ||
-            ouvrage.format ||
-            ouvrage.type_document
-        )
-        .filter(Boolean)
-    )
+        .map((ouvrage) => ouvrage.type_ressource || ouvrage.type || ouvrage.format || ouvrage.type_document)
+        .filter(Boolean),
+    ),
   );
 
   const filteredOuvrages = ouvrages
@@ -82,9 +79,7 @@ export default function LecteurCataloguePage() {
         String(ouvrage.categorie || "").toLowerCase().includes(searchTerm)
       );
     })
-    .filter((ouvrage) =>
-      categoryFilter === "Toutes" ? true : ouvrage.categorie === categoryFilter
-    )
+    .filter((ouvrage) => (categoryFilter === "Toutes" ? true : ouvrage.categorie === categoryFilter))
     .filter((ouvrage) => {
       if (availabilityFilter === "Toutes") return true;
       const available = (ouvrage.exemplaires_disponibles || 0) > 0;
@@ -92,11 +87,7 @@ export default function LecteurCataloguePage() {
     })
     .filter((ouvrage) => {
       if (typeFilter === "Tous") return true;
-      const type =
-        ouvrage.type_ressource ||
-        ouvrage.type ||
-        ouvrage.format ||
-        ouvrage.type_document;
+      const type = ouvrage.type_ressource || ouvrage.type || ouvrage.format || ouvrage.type_document;
       return type === typeFilter;
     })
     .sort((a, b) => {
@@ -112,6 +103,22 @@ export default function LecteurCataloguePage() {
   const emptyStateMessage = search.trim()
     ? "Aucun ouvrage ne correspond à votre recherche."
     : "Aucun ouvrage disponible pour le moment.";
+  const selectedThumbnailCandidates = [
+    selected?.image_couverture,
+    selected?.couverture,
+    selected?.image_url,
+    selected?.image?.url,
+    selected?.image,
+  ];
+  const selectedThumbnail = selectedThumbnailCandidates.find(
+    (value) => typeof value === "string" && value.trim().length > 0,
+  );
+  const selectedDescription =
+    selected?.resume || selected?.description || selected?.resume_court || selected?.summary;
+  const selectedType =
+    selected?.type_ressource || selected?.type || selected?.format || selected?.type_document;
+  const selectedTypeLabel = selectedType ? typeLabels[selectedType] ?? selectedType : "Non renseigné";
+  const selectedCategory = selected?.categorie || "Non renseignée";
 
   return (
     <RoleGuard allowed={["LECTEUR"]}>
@@ -181,9 +188,7 @@ export default function LecteurCataloguePage() {
                 {filteredOuvrages.length} résultat{filteredOuvrages.length > 1 ? "s" : ""}
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                  Trier par
-                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Trier par</span>
                 <select
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value)}
@@ -215,12 +220,7 @@ export default function LecteurCataloguePage() {
               ))}
             {!loading &&
               filteredOuvrages.map((ouvrage) => {
-                const type =
-                  ouvrage.type_ressource ||
-                  ouvrage.type ||
-                  ouvrage.format ||
-                  ouvrage.type_document ||
-                  "Ouvrage";
+                const type = ouvrage.type_ressource || ouvrage.type || ouvrage.format || ouvrage.type_document || "Ouvrage";
                 const resume =
                   ouvrage.resume ||
                   ouvrage.description ||
@@ -228,8 +228,7 @@ export default function LecteurCataloguePage() {
                   ouvrage.summary ||
                   "Résumé non disponible pour cet ouvrage.";
                 const disponible = (ouvrage.exemplaires_disponibles || 0) > 0;
-                const image =
-                  ouvrage.image_couverture || ouvrage.couverture || ouvrage.image || "";
+                const image = ouvrage.image_couverture || ouvrage.couverture || ouvrage.image || "";
                 return (
                   <div
                     key={ouvrage.id}
@@ -238,11 +237,7 @@ export default function LecteurCataloguePage() {
                     <div className="relative h-40 w-full overflow-hidden rounded-xl bg-slate-100">
                       {image ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={image}
-                          alt={`Couverture de ${ouvrage.titre}`}
-                          className="h-full w-full object-cover"
-                        />
+                        <img src={image} alt={`Couverture de ${ouvrage.titre}`} className="h-full w-full object-cover" />
                       ) : (
                         <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-400">
                           <span className="text-3xl">📘</span>
@@ -264,9 +259,7 @@ export default function LecteurCataloguePage() {
                         </span>
                         <span
                           className={`rounded-full px-2 py-1 font-semibold ${
-                            disponible
-                              ? "bg-emerald-50 text-emerald-600"
-                              : "bg-rose-50 text-rose-600"
+                            disponible ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
                           }`}
                         >
                           {disponible
@@ -300,17 +293,41 @@ export default function LecteurCataloguePage() {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl">
                 📚
               </div>
-              <h3 className="mt-4 text-base font-semibold text-slate-700">
-                Aucun résultat à afficher
-              </h3>
+              <h3 className="mt-4 text-base font-semibold text-slate-700">Aucun résultat à afficher</h3>
               <p className="mt-2 text-sm text-slate-500">{emptyStateMessage}</p>
             </div>
           )}
         </TableCard>
 
         <Modal open={open} onClose={() => setOpen(false)} title="Réserver un ouvrage">
-          <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            {selected?.titre} · {selected?.auteur}
+          <div className="rounded-xl bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="h-16 w-16 overflow-hidden rounded-xl bg-white">
+                {selectedThumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={selectedThumbnail}
+                    alt={`Couverture de ${selected?.titre ?? "cet ouvrage"}`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xl text-slate-400">
+                    📘
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-slate-700">{selected?.titre || "Ouvrage"}</p>
+                <p className="text-xs text-slate-500">{selected?.auteur || "Auteur non renseigné"}</p>
+                <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
+                  <span className="rounded-full bg-white px-3 py-1">Catégorie : {selectedCategory}</span>
+                  <span className="rounded-full bg-white px-3 py-1">Type : {selectedTypeLabel}</span>
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              {selectedDescription || "Aucune description disponible pour cet ouvrage."}
+            </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
