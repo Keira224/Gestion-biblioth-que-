@@ -23,6 +23,14 @@ def exemplaires_disponibles(request):
     # Payload: query params (ordering, page, page_size).
     # Reponse: liste paginee d'exemplaires.
     qs = Exemplaire.objects.filter(etat=EtatExemplaire.DISPONIBLE).select_related("ouvrage")
+    q = request.query_params.get("q")
+    if q:
+        qs = qs.filter(
+            Q(code_barre__icontains=q)
+            | Q(ouvrage__titre__icontains=q)
+            | Q(ouvrage__auteur__icontains=q)
+            | Q(ouvrage__isbn__icontains=q)
+        )
     qs = apply_ordering(
         qs,
         request,
@@ -69,11 +77,11 @@ def exemplaires_par_ouvrage(request, ouvrage_id: int):
     if nombre <= 0:
         return Response({"detail": "Nombre invalide."}, status=status.HTTP_400_BAD_REQUEST)
 
-    exemplaires = [
-        Exemplaire(ouvrage=ouvrage, code_barre=generate_code_barre(ouvrage.id))
-        for _ in range(nombre)
-    ]
-    Exemplaire.objects.bulk_create(exemplaires)
+    for _ in range(nombre):
+        Exemplaire.objects.create(
+            ouvrage=ouvrage,
+            code_barre=generate_code_barre(ouvrage.id),
+        )
 
     log_activity(
         type=ActivityType.EXEMPLAIRE_AJOUTE,

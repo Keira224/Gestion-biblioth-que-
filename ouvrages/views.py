@@ -54,17 +54,9 @@ def ouvrages_list(request):
         serializer = OuvrageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        nombre = data.pop("nombre_exemplaires", 0)
 
-        ouvrage = Ouvrage.objects.create(
-            isbn=data["isbn"],
-            titre=data["titre"],
-            auteur=data["auteur"],
-            editeur=data.get("editeur"),
-            annee=data.get("annee"),
-            categorie=data["categorie"],
-            type_ressource=data.get("type_ressource", "LIVRE"),
-            disponible=data.get("disponible", True),
-        )
+        ouvrage = Ouvrage.objects.create(**data)
 
         log_activity(
             type=ActivityType.OUVRAGE_AJOUTE,
@@ -72,13 +64,12 @@ def ouvrages_list(request):
             user=request.user,
         )
 
-        nombre = data.get("nombre_exemplaires", 0)
         if nombre:
-            exemplaires = [
-                Exemplaire(ouvrage=ouvrage, code_barre=generate_code_barre(ouvrage.id))
-                for _ in range(nombre)
-            ]
-            Exemplaire.objects.bulk_create(exemplaires)
+            for _ in range(nombre):
+                Exemplaire.objects.create(
+                    ouvrage=ouvrage,
+                    code_barre=generate_code_barre(ouvrage.id),
+                )
 
         qs = annotate_ouvrages(Ouvrage.objects.filter(id=ouvrage.id))
         return Response(OuvrageSerializer(qs.first()).data, status=status.HTTP_201_CREATED)
@@ -92,6 +83,17 @@ def ouvrages_list(request):
             | Q(auteur__icontains=search)
             | Q(isbn__icontains=search)
             | Q(categorie__icontains=search)
+        )
+
+    q = request.query_params.get("q")
+    if q:
+        qs = qs.filter(
+            Q(titre__icontains=q)
+            | Q(auteur__icontains=q)
+            | Q(isbn__icontains=q)
+            | Q(categorie__icontains=q)
+            | Q(editeur__icontains=q)
+            | Q(description_courte__icontains=q)
         )
 
     titre = request.query_params.get("titre")
@@ -154,16 +156,29 @@ def ouvrage_detail(request, ouvrage_id: int):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        log_activity(
+            type=ActivityType.OUVRAGE_MIS_A_JOUR,
+            message=f"Ouvrage mis a jour: {ouvrage.titre}",
+            user=request.user,
+        )
+
         qs = annotate_ouvrages(Ouvrage.objects.filter(id=ouvrage_id))
         return Response(OuvrageSerializer(qs.first()).data)
 
     try:
+        titre = ouvrage.titre
         ouvrage.delete()
     except ProtectedError:
         return Response(
             {"detail": "Impossible de supprimer un ouvrage avec des emprunts."},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+    log_activity(
+        type=ActivityType.OUVRAGE_SUPPRIME,
+        message=f"Ouvrage supprime: {titre}",
+        user=request.user,
+    )
 
     return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -272,7 +287,7 @@ def ebooks(request):
     serializer.is_valid(raise_exception=True)
     ebook = serializer.save()
     log_activity(
-        type=ActivityType.OUVRAGE_AJOUTE,
+        type=ActivityType.EBOOK_AJOUTE,
         message=f"Ebook ajoute: {ebook.nom_fichier}",
         user=request.user,
     )
@@ -325,7 +340,18 @@ def ebook_detail(request, ebook_id: int):
         serializer = EbookUpdateSerializer(instance=ebook, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        log_activity(
+            type=ActivityType.EBOOK_MIS_A_JOUR,
+            message=f"Ebook mis a jour: {ebook.nom_fichier}",
+            user=request.user,
+        )
         return Response(EbookSerializer(ebook).data, status=status.HTTP_200_OK)
 
+    nom_fichier = ebook.nom_fichier
     ebook.delete()
+    log_activity(
+        type=ActivityType.EBOOK_SUPPRIME,
+        message=f"Ebook supprime: {nom_fichier}",
+        user=request.user,
+    )
     return Response(status=status.HTTP_204_NO_CONTENT)
