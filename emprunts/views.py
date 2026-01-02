@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Optional
 
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -220,6 +220,65 @@ def ouvrages_les_plus_empruntes(limit: int = 10):
     )
 
 
+def ouvrages_rotation(limit: int = 10, days: int = 30):
+    # Taux de rotation par ouvrage (emprunts / exemplaires sur une periode).
+    since = timezone.localdate() - timedelta(days=days)
+    qs = (
+        Ouvrage.objects
+        .annotate(
+            exemplaires_total=Count("exemplaires", distinct=True),
+            emprunts_periode=Count(
+                "exemplaires__emprunts",
+                filter=Q(exemplaires__emprunts__date_emprunt__gte=since),
+                distinct=True,
+            ),
+        )
+        .filter(exemplaires_total__gt=0)
+    )
+
+    data = []
+    for ouvrage in qs:
+        rotation = ouvrage.emprunts_periode / ouvrage.exemplaires_total
+        data.append({
+            "ouvrage_id": ouvrage.id,
+            "ouvrage_titre": ouvrage.titre,
+            "exemplaires_total": ouvrage.exemplaires_total,
+            "emprunts_periode": ouvrage.emprunts_periode,
+            "rotation": round(rotation, 2),
+        })
+    return sorted(data, key=lambda item: item["rotation"], reverse=True)[:limit]
+
+
+def retards_frequents_lecteurs(limit: int = 10, days: int = 90):
+    # Lecteurs avec le plus de retards (historique + en cours).
+    since = timezone.localdate() - timedelta(days=days)
+    return (
+        Emprunt.objects
+        .filter(
+            Q(date_emprunt__gte=since),
+            Q(statut=StatutEmprunt.EN_RETARD) | Q(date_retour_effective__gt=F("date_retour_prevue")),
+        )
+        .values("adherent__user__username")
+        .annotate(total=Count("id"))
+        .order_by("-total")[:limit]
+    )
+
+
+def retards_frequents_ouvrages(limit: int = 10, days: int = 90):
+    # Ouvrages associes aux retards les plus frequents.
+    since = timezone.localdate() - timedelta(days=days)
+    return (
+        Emprunt.objects
+        .filter(
+            Q(date_emprunt__gte=since),
+            Q(statut=StatutEmprunt.EN_RETARD) | Q(date_retour_effective__gt=F("date_retour_prevue")),
+        )
+        .values("exemplaire__ouvrage__titre")
+        .annotate(total=Count("id"))
+        .order_by("-total")[:limit]
+    )
+
+
 def resume_dashboard(user=None):
     # Stats simples pour cartes dashboard.
     emprunts = Emprunt.objects.all()
@@ -372,6 +431,17 @@ def emprunts_recents(request):
     if statut:
         qs = qs.filter(statut=statut)
 
+    q = request.query_params.get("q")
+    if q:
+        qs = qs.filter(
+            Q(exemplaire__code_barre__icontains=q)
+            | Q(exemplaire__ouvrage__titre__icontains=q)
+            | Q(exemplaire__ouvrage__isbn__icontains=q)
+            | Q(adherent__user__username__icontains=q)
+            | Q(adherent__user__first_name__icontains=q)
+            | Q(adherent__user__last_name__icontains=q)
+        )
+
     qs = apply_ordering(
         qs,
         request,
@@ -409,6 +479,17 @@ def emprunts_historique(request):
             | Q(adherent__user__username__icontains=search)
         )
 
+    q = request.query_params.get("q")
+    if q:
+        qs = qs.filter(
+            Q(exemplaire__code_barre__icontains=q)
+            | Q(exemplaire__ouvrage__titre__icontains=q)
+            | Q(exemplaire__ouvrage__isbn__icontains=q)
+            | Q(adherent__user__username__icontains=q)
+            | Q(adherent__user__first_name__icontains=q)
+            | Q(adherent__user__last_name__icontains=q)
+        )
+
     qs = apply_ordering(
         qs,
         request,
@@ -440,6 +521,17 @@ def emprunts_retards(request):
             | Q(adherent__user__username__icontains=search)
         )
 
+    q = request.query_params.get("q")
+    if q:
+        qs = qs.filter(
+            Q(exemplaire__code_barre__icontains=q)
+            | Q(exemplaire__ouvrage__titre__icontains=q)
+            | Q(exemplaire__ouvrage__isbn__icontains=q)
+            | Q(adherent__user__username__icontains=q)
+            | Q(adherent__user__first_name__icontains=q)
+            | Q(adherent__user__last_name__icontains=q)
+        )
+
     qs = apply_ordering(
         qs,
         request,
@@ -465,6 +557,17 @@ def emprunts_en_cours(request):
         qs = qs.filter(
             Q(exemplaire__ouvrage__titre__icontains=search)
             | Q(adherent__user__username__icontains=search)
+        )
+
+    q = request.query_params.get("q")
+    if q:
+        qs = qs.filter(
+            Q(exemplaire__code_barre__icontains=q)
+            | Q(exemplaire__ouvrage__titre__icontains=q)
+            | Q(exemplaire__ouvrage__isbn__icontains=q)
+            | Q(adherent__user__username__icontains=q)
+            | Q(adherent__user__first_name__icontains=q)
+            | Q(adherent__user__last_name__icontains=q)
         )
 
     qs = apply_ordering(
@@ -495,6 +598,17 @@ def liste_penalites(request):
             Q(emprunt__adherent__user__username__icontains=search)
             | Q(emprunt__exemplaire__ouvrage__titre__icontains=search)
             | Q(emprunt__exemplaire__code_barre__icontains=search)
+        )
+
+    q = request.query_params.get("q")
+    if q:
+        qs = qs.filter(
+            Q(emprunt__adherent__user__username__icontains=q)
+            | Q(emprunt__adherent__user__first_name__icontains=q)
+            | Q(emprunt__adherent__user__last_name__icontains=q)
+            | Q(emprunt__exemplaire__ouvrage__titre__icontains=q)
+            | Q(emprunt__exemplaire__ouvrage__isbn__icontains=q)
+            | Q(emprunt__exemplaire__code_barre__icontains=q)
         )
     payee = request.query_params.get("payee")
     if payee in {"true", "false"}:
@@ -563,12 +677,29 @@ def stats_dashboard(request):
             "resume": resume_dashboard(user=request.user),
             "lecteurs_plus_actifs": [],
             "ouvrages_plus_empruntes": [],
+            "rotation_ouvrages": [],
+            "retards_frequents": {"lecteurs": [], "ouvrages": []},
         })
+
+    try:
+        rotation_days = int(request.query_params.get("rotation_days", 30))
+    except (TypeError, ValueError):
+        rotation_days = 30
+
+    try:
+        retards_days = int(request.query_params.get("retards_days", 90))
+    except (TypeError, ValueError):
+        retards_days = 90
 
     return Response({
         "resume": resume_dashboard(),
         "lecteurs_plus_actifs": list(lecteurs_les_plus_actifs(limit=10)),
         "ouvrages_plus_empruntes": list(ouvrages_les_plus_empruntes(limit=10)),
+        "rotation_ouvrages": ouvrages_rotation(limit=10, days=rotation_days),
+        "retards_frequents": {
+            "lecteurs": list(retards_frequents_lecteurs(limit=10, days=retards_days)),
+            "ouvrages": list(retards_frequents_ouvrages(limit=10, days=retards_days)),
+        },
     })
 
 
@@ -615,6 +746,16 @@ def reservations(request):
             qs = qs.filter(
                 Q(ouvrage__titre__icontains=search)
                 | Q(adherent__user__username__icontains=search)
+            )
+
+        q = request.query_params.get("q")
+        if q:
+            qs = qs.filter(
+                Q(ouvrage__titre__icontains=q)
+                | Q(ouvrage__isbn__icontains=q)
+                | Q(adherent__user__username__icontains=q)
+                | Q(adherent__user__first_name__icontains=q)
+                | Q(adherent__user__last_name__icontains=q)
             )
 
         qs = apply_ordering(

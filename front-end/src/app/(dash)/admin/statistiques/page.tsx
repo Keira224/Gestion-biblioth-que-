@@ -87,6 +87,94 @@ export default function AdminStatistiquesPage() {
               </tbody>
             </table>
           </TableCard>
+
+          <TableCard title="Rotation des ouvrages (30 derniers jours)">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase text-slate-400">
+                <tr>
+                  <th className="py-2">Ouvrage</th>
+                  <th className="py-2">Rotation</th>
+                  <th className="py-2">Emprunts</th>
+                  <th className="py-2">Exemplaires</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(stats?.rotation_ouvrages || []).map((item: any, idx: number) => (
+                  <tr key={`${item.ouvrage_id}-${idx}`} className="border-t border-slate-100">
+                    <td className="py-3 text-slate-700">{item.ouvrage_titre}</td>
+                    <td className="py-3 text-slate-600">{item.rotation}</td>
+                    <td className="py-3 text-slate-600">{item.emprunts_periode}</td>
+                    <td className="py-3 text-slate-600">{item.exemplaires_total}</td>
+                  </tr>
+                ))}
+                {!loading && (!stats?.rotation_ouvrages || stats.rotation_ouvrages.length === 0) && (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-sm text-slate-400">
+                      Aucune rotation à afficher.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </TableCard>
+
+          <TableCard title="Retards fréquents">
+            <div className="space-y-4">
+              <div>
+                <div className="mb-2 text-xs font-semibold uppercase text-slate-400">Lecteurs</div>
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs uppercase text-slate-400">
+                    <tr>
+                      <th className="py-2">Lecteur</th>
+                      <th className="py-2">Retards</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(stats?.retards_frequents?.lecteurs || []).map((item: any, idx: number) => (
+                      <tr key={`${item.adherent__user__username}-${idx}`} className="border-t border-slate-100">
+                        <td className="py-3 text-slate-700">{item.adherent__user__username}</td>
+                        <td className="py-3 text-slate-600">{item.total}</td>
+                      </tr>
+                    ))}
+                    {!loading && (!stats?.retards_frequents?.lecteurs || stats.retards_frequents.lecteurs.length === 0) && (
+                      <tr>
+                        <td colSpan={2} className="py-6 text-center text-sm text-slate-400">
+                          Aucun retard côté lecteurs.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <div className="mb-2 text-xs font-semibold uppercase text-slate-400">Ouvrages</div>
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs uppercase text-slate-400">
+                    <tr>
+                      <th className="py-2">Ouvrage</th>
+                      <th className="py-2">Retards</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(stats?.retards_frequents?.ouvrages || []).map((item: any, idx: number) => (
+                      <tr key={`${item.exemplaire__ouvrage__titre}-${idx}`} className="border-t border-slate-100">
+                        <td className="py-3 text-slate-700">{item.exemplaire__ouvrage__titre}</td>
+                        <td className="py-3 text-slate-600">{item.total}</td>
+                      </tr>
+                    ))}
+                    {!loading && (!stats?.retards_frequents?.ouvrages || stats.retards_frequents.ouvrages.length === 0) && (
+                      <tr>
+                        <td colSpan={2} className="py-6 text-center text-sm text-slate-400">
+                          Aucun retard côté ouvrages.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TableCard>
         </div>
       </div>
     </RoleGuard>
