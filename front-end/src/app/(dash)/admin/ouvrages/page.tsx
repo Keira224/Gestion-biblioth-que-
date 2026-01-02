@@ -19,7 +19,13 @@ export default function AdminOuvragesPage() {
   const [ouvrages, setOuvrages] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1 });
   const [search, setSearch] = useState("");
+  const [titreFilter, setTitreFilter] = useState("");
+  const [auteurFilter, setAuteurFilter] = useState("");
+  const [isbnFilter, setIsbnFilter] = useState("");
+  const [categorieFilter, setCategorieFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [disponibleFilter, setDisponibleFilter] = useState("");
+  const [ordering, setOrdering] = useState("titre");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -58,7 +64,13 @@ export default function AdminOuvragesPage() {
         params: {
           page,
           search: search || undefined,
+          titre: titreFilter || undefined,
+          auteur: auteurFilter || undefined,
+          isbn: isbnFilter || undefined,
+          categorie: categorieFilter || undefined,
           type_ressource: typeFilter || undefined,
+          disponible: disponibleFilter || undefined,
+          ordering: ordering || undefined,
         },
       });
       setOuvrages(response.data.results || []);
@@ -73,7 +85,7 @@ export default function AdminOuvragesPage() {
   useEffect(() => {
     fetchOuvrages(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, typeFilter]);
+  }, [search, titreFilter, auteurFilter, isbnFilter, categorieFilter, typeFilter, disponibleFilter, ordering]);
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -190,12 +202,36 @@ export default function AdminOuvragesPage() {
             </button>
           }
         >
-          <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="mb-4 grid gap-3 lg:grid-cols-6">
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              placeholder="Rechercher..."
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Recherche globale..."
+            />
+            <input
+              value={titreFilter}
+              onChange={(event) => setTitreFilter(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Titre"
+            />
+            <input
+              value={auteurFilter}
+              onChange={(event) => setAuteurFilter(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Auteur"
+            />
+            <input
+              value={isbnFilter}
+              onChange={(event) => setIsbnFilter(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="ISBN"
+            />
+            <input
+              value={categorieFilter}
+              onChange={(event) => setCategorieFilter(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Catégorie"
             />
             <select
               value={typeFilter}
@@ -206,6 +242,29 @@ export default function AdminOuvragesPage() {
               <option value="LIVRE">Livre</option>
               <option value="DVD">DVD</option>
               <option value="RESSOURCE_NUMERIQUE">Ressource numérique</option>
+            </select>
+            <select
+              value={disponibleFilter}
+              onChange={(event) => setDisponibleFilter(event.target.value)}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            >
+              <option value="">Disponibilité</option>
+              <option value="true">Disponible</option>
+              <option value="false">Indisponible</option>
+            </select>
+            <select
+              value={ordering}
+              onChange={(event) => setOrdering(event.target.value)}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            >
+              <option value="titre">Titre (A-Z)</option>
+              <option value="-titre">Titre (Z-A)</option>
+              <option value="auteur">Auteur (A-Z)</option>
+              <option value="-auteur">Auteur (Z-A)</option>
+              <option value="isbn">ISBN (A-Z)</option>
+              <option value="-isbn">ISBN (Z-A)</option>
+              <option value="categorie">Catégorie (A-Z)</option>
+              <option value="-categorie">Catégorie (Z-A)</option>
             </select>
           </div>
           <table className="w-full text-sm">

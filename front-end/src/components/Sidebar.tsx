@@ -42,7 +42,7 @@ export const Sidebar = ({
         </p>
       </div>
 
-      <nav className="flex-1 space-y-6 px-4">
+      <nav className="flex-1 space-y-6 overflow-y-auto px-4 pb-6">
         <div className="space-y-1">
           <p className="px-2 text-xs font-semibold uppercase tracking-wide text-white/60">Navigation</p>
         {menu.map((item) => {
@@ -83,7 +83,7 @@ export const Sidebar = ({
         </div>
       </nav>
 
-      <div className="px-6 pb-6 pt-4">
+      <div className="shrink-0 px-6 pb-6 pt-4">
         <button
           type="button"
           onClick={onLogout}

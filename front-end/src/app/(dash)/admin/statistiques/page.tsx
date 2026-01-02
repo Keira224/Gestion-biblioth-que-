@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
-import { TableCard } from "../../../../components/TableCard";
+import { BarList } from "../../../../components/BarList";
+import { StatCard } from "../../../../components/StatCard";
 
 export default function AdminStatistiquesPage() {
   const [stats, setStats] = useState<any>(null);
@@ -35,58 +36,62 @@ export default function AdminStatistiquesPage() {
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <TableCard title="Lecteurs les plus actifs">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase text-slate-400">
-                <tr>
-                  <th className="py-2">Lecteur</th>
-                  <th className="py-2">Emprunts</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(stats?.lecteurs_plus_actifs || []).map((item: any, idx: number) => (
-                  <tr key={`${item.adherent__user__username}-${idx}`} className="border-t border-slate-100">
-                    <td className="py-3 text-slate-700">{item.adherent__user__username}</td>
-                    <td className="py-3 text-slate-600">{item.total}</td>
-                  </tr>
-                ))}
-                {!loading && (!stats?.lecteurs_plus_actifs || stats.lecteurs_plus_actifs.length === 0) && (
-                  <tr>
-                    <td colSpan={2} className="py-6 text-center text-sm text-slate-400">
-                      Aucun lecteur à afficher.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </TableCard>
+        <div className="grid gap-6 md:grid-cols-3">
+          <StatCard
+            title="Emprunts totaux"
+            value={stats?.resume?.nb_emprunts_total ?? (loading ? "..." : 0)}
+            subtitle="Tous les emprunts enregistres"
+          />
+          <StatCard
+            title="Emprunts en retard"
+            value={stats?.resume?.nb_emprunts_en_retard ?? (loading ? "..." : 0)}
+            subtitle="Retards en cours"
+          />
+          <StatCard
+            title="Penalites impayees"
+            value={stats?.resume?.nb_penalites_impayees ?? (loading ? "..." : 0)}
+            subtitle="A regler"
+          />
+        </div>
 
-          <TableCard title="Ouvrages les plus empruntés">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase text-slate-400">
-                <tr>
-                  <th className="py-2">Ouvrage</th>
-                  <th className="py-2">Emprunts</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(stats?.ouvrages_plus_empruntes || []).map((item: any, idx: number) => (
-                  <tr key={`${item.exemplaire__ouvrage__titre}-${idx}`} className="border-t border-slate-100">
-                    <td className="py-3 text-slate-700">{item.exemplaire__ouvrage__titre}</td>
-                    <td className="py-3 text-slate-600">{item.total}</td>
-                  </tr>
-                ))}
-                {!loading && (!stats?.ouvrages_plus_empruntes || stats.ouvrages_plus_empruntes.length === 0) && (
-                  <tr>
-                    <td colSpan={2} className="py-6 text-center text-sm text-slate-400">
-                      Aucun ouvrage à afficher.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </TableCard>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BarList
+            title="Lecteurs les plus actifs"
+            emptyLabel="Aucun lecteur a afficher."
+            items={(stats?.lecteurs_plus_actifs || []).map((item: any) => ({
+              label: item.adherent__user__username,
+              value: item.total,
+            }))}
+          />
+
+          <BarList
+            title="Retards frequents"
+            emptyLabel="Aucun retard a afficher."
+            items={(stats?.retards_frequents || []).map((item: any) => ({
+              label: item.adherent__user__username,
+              value: item.total,
+            }))}
+          />
+
+          <BarList
+            title="Ouvrages les plus empruntes"
+            emptyLabel="Aucun ouvrage a afficher."
+            items={(stats?.ouvrages_plus_empruntes || []).map((item: any) => ({
+              label: item.exemplaire__ouvrage__titre,
+              value: item.total,
+            }))}
+          />
+
+          <BarList
+            title="Taux de rotation des ouvrages"
+            emptyLabel="Aucun taux de rotation a afficher."
+            valueSuffix=""
+            items={(stats?.taux_rotation_ouvrages || []).map((item: any) => ({
+              label: item.titre,
+              value: item.taux_rotation,
+              meta: `Emprunts ${item.total_emprunts} / Exemplaires ${item.nb_exemplaires}`,
+            }))}
+          />
         </div>
       </div>
     </RoleGuard>

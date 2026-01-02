@@ -1,4 +1,5 @@
 # Role de ce fichier: serializers DRF pour ouvrages.
+import re
 from rest_framework import serializers
 
 from .models import Ouvrage
@@ -33,6 +34,18 @@ class OuvrageCreateSerializer(serializers.ModelSerializer):
     # Input creation ouvrage (+ nombre_exemplaires).
     nombre_exemplaires = serializers.IntegerField(required=False, min_value=0)
 
+    def validate_isbn(self, value: str):
+        raw = value or ""
+        normalized = re.sub(r"[-\s]", "", raw).upper()
+        if len(normalized) not in {10, 13}:
+            raise serializers.ValidationError("ISBN invalide (10 ou 13 caracteres requis).")
+        if len(normalized) == 10:
+            if not re.fullmatch(r"\d{9}[\dX]", normalized):
+                raise serializers.ValidationError("ISBN-10 invalide (9 chiffres + chiffre ou X).")
+        if len(normalized) == 13 and not normalized.isdigit():
+            raise serializers.ValidationError("ISBN-13 invalide (13 chiffres).")
+        return normalized
+
     class Meta:
         model = Ouvrage
         fields = [
@@ -52,6 +65,18 @@ class OuvrageCreateSerializer(serializers.ModelSerializer):
 
 class OuvrageUpdateSerializer(serializers.ModelSerializer):
     # Input update ouvrage.
+    def validate_isbn(self, value: str):
+        raw = value or ""
+        normalized = re.sub(r"[-\s]", "", raw).upper()
+        if len(normalized) not in {10, 13}:
+            raise serializers.ValidationError("ISBN invalide (10 ou 13 caracteres requis).")
+        if len(normalized) == 10:
+            if not re.fullmatch(r"\d{9}[\dX]", normalized):
+                raise serializers.ValidationError("ISBN-10 invalide (9 chiffres + chiffre ou X).")
+        if len(normalized) == 13 and not normalized.isdigit():
+            raise serializers.ValidationError("ISBN-13 invalide (13 chiffres).")
+        return normalized
+
     class Meta:
         model = Ouvrage
         fields = [
@@ -90,6 +115,20 @@ class DemandeLivreSerializer(serializers.ModelSerializer):
 
 
 class DemandeLivreCreateSerializer(serializers.ModelSerializer):
+    def validate_isbn(self, value: str):
+        if not value:
+            return value
+        raw = value or ""
+        normalized = re.sub(r"[-\s]", "", raw).upper()
+        if len(normalized) not in {10, 13}:
+            raise serializers.ValidationError("ISBN invalide (10 ou 13 caracteres requis).")
+        if len(normalized) == 10:
+            if not re.fullmatch(r"\d{9}[\dX]", normalized):
+                raise serializers.ValidationError("ISBN-10 invalide (9 chiffres + chiffre ou X).")
+        if len(normalized) == 13 and not normalized.isdigit():
+            raise serializers.ValidationError("ISBN-13 invalide (13 chiffres).")
+        return normalized
+
     class Meta:
         model = DemandeLivre
         fields = ["titre", "auteur", "isbn", "description", "urgence"]
