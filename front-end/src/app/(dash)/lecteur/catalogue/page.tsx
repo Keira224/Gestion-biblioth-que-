@@ -9,6 +9,15 @@ import { Modal } from "../../../../components/Modal";
 import { EmptyState } from "../../../../components/EmptyState";
 
 export default function LecteurCataloguePage() {
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+  const getImageUrl = (value?: string | null) => {
+    if (!value) return undefined;
+    if (value.startsWith("/media")) {
+      return `${apiBase}${value}`;
+    }
+    return value;
+  };
+
   const [ouvrages, setOuvrages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -169,8 +178,8 @@ export default function LecteurCataloguePage() {
                 <div key={ouvrage.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex gap-4">
                     <div className="flex h-28 w-20 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-400">
-                      {ouvrage.image ? (
-                        <img src={ouvrage.image} alt={ouvrage.titre} className="h-full w-full object-cover" />
+                      {getImageUrl(ouvrage.image) ? (
+                        <img src={getImageUrl(ouvrage.image)} alt={ouvrage.titre} className="h-full w-full object-cover" />
                       ) : (
                         <BookOpen className="h-6 w-6" />
                       )}
@@ -213,8 +222,8 @@ export default function LecteurCataloguePage() {
         <Modal open={open} onClose={() => setOpen(false)} title="Réserver un ouvrage">
           <div className="flex gap-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <div className="flex h-16 w-12 items-center justify-center overflow-hidden rounded-lg bg-white text-slate-400">
-              {selected?.image ? (
-                <img src={selected.image} alt={selected.titre} className="h-full w-full object-cover" />
+              {getImageUrl(selected?.image) ? (
+                <img src={getImageUrl(selected?.image)} alt={selected?.titre} className="h-full w-full object-cover" />
               ) : (
                 <BookOpen className="h-5 w-5" />
               )}

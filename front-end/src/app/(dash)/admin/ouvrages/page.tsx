@@ -8,6 +8,14 @@ import { TableCard } from "../../../../components/TableCard";
 import { Modal } from "../../../../components/Modal";
 
 export default function AdminOuvragesPage() {
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+  const getImageUrl = (value?: string | null) => {
+    if (!value) return undefined;
+    if (value.startsWith("/media")) {
+      return `${apiBase}${value}`;
+    }
+    return value;
+  };
   const [ouvrages, setOuvrages] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1 });
   const [search, setSearch] = useState("");
@@ -218,8 +226,12 @@ export default function AdminOuvragesPage() {
                   <td className="py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-9 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-slate-400">
-                        {ouvrage.image ? (
-                          <img src={ouvrage.image} alt={ouvrage.titre} className="h-full w-full object-cover" />
+                        {getImageUrl(ouvrage.image) ? (
+                          <img
+                            src={getImageUrl(ouvrage.image)}
+                            alt={ouvrage.titre}
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <BookOpen className="h-4 w-4" />
                         )}
@@ -374,6 +386,7 @@ export default function AdminOuvragesPage() {
                 />
               </div>
             </div>
+
             <div>
               <label className="text-xs font-semibold text-slate-500">Description courte</label>
               <textarea
@@ -490,6 +503,7 @@ export default function AdminOuvragesPage() {
                 </select>
               </div>
             </div>
+
             <div>
               <label className="text-xs font-semibold text-slate-500">Description courte</label>
               <textarea

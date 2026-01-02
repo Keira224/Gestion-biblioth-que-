@@ -64,6 +64,8 @@ def ouvrages_list(request):
             categorie=data["categorie"],
             type_ressource=data.get("type_ressource", "LIVRE"),
             disponible=data.get("disponible", True),
+            image=data.get("image"),
+            description_courte=data.get("description_courte"),
         )
 
         log_activity(
