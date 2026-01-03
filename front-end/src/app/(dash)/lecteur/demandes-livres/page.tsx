@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
@@ -24,7 +24,7 @@ export default function LecteurDemandesPage() {
     urgence: "",
   });
 
-  const fetchDemandes = async () => {
+  const fetchDemandes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -42,11 +42,11 @@ export default function LecteurDemandesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, search, statutFilter]);
 
   useEffect(() => {
     fetchDemandes();
-  }, [pagination.page, search, statutFilter]);
+  }, [fetchDemandes]);
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

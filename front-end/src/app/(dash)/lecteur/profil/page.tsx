@@ -16,7 +16,7 @@ export default function LecteurProfilPage() {
           </p>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-xl bg-slate-50 px-4 py-3">
-              <p className="text-xs uppercase text-slate-400">Nom d'utilisateur</p>
+              <p className="text-xs uppercase text-slate-400">Nom d&apos;utilisateur</p>
               <p className="mt-1 text-sm font-semibold text-slate-700">{user?.username}</p>
             </div>
             <div className="rounded-xl bg-slate-50 px-4 py-3">

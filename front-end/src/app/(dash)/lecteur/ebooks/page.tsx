@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
 import { TableCard } from "../../../../components/TableCard";
@@ -15,7 +15,7 @@ export default function LecteurEbooksPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const fetchEbooks = async () => {
+  const fetchEbooks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -33,11 +33,11 @@ export default function LecteurEbooksPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, payantFilter, search]);
 
   useEffect(() => {
     fetchEbooks();
-  }, [pagination.page, search, payantFilter]);
+  }, [fetchEbooks]);
 
   const handleDownload = async (ebookId: number) => {
     setError(null);

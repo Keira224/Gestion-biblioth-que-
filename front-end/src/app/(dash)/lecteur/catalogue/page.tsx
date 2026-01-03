@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { BookOpen, Filter } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { RoleGuard } from "../../../../components/RoleGuard";
@@ -179,7 +180,15 @@ export default function LecteurCataloguePage() {
                   <div className="flex gap-4">
                     <div className="flex h-28 w-20 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-400">
                       {getImageUrl(ouvrage.image) ? (
-                        <img src={getImageUrl(ouvrage.image)} alt={ouvrage.titre} className="h-full w-full object-cover" />
+                        <Image
+                          src={getImageUrl(ouvrage.image) ?? ""}
+                          alt={ouvrage.titre}
+                          width={80}
+                          height={112}
+                          sizes="80px"
+                          className="h-full w-full object-cover"
+                          unoptimized
+                        />
                       ) : (
                         <BookOpen className="h-6 w-6" />
                       )}
@@ -223,7 +232,15 @@ export default function LecteurCataloguePage() {
           <div className="flex gap-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <div className="flex h-16 w-12 items-center justify-center overflow-hidden rounded-lg bg-white text-slate-400">
               {getImageUrl(selected?.image) ? (
-                <img src={getImageUrl(selected?.image)} alt={selected?.titre} className="h-full w-full object-cover" />
+                <Image
+                  src={getImageUrl(selected?.image) ?? ""}
+                  alt={selected?.titre ?? "Couverture de l'ouvrage"}
+                  width={48}
+                  height={64}
+                  sizes="48px"
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
               ) : (
                 <BookOpen className="h-5 w-5" />
               )}
